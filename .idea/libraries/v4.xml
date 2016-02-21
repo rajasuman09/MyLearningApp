@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="v4">
+    <CLASSES>
+      <root url="file://$USER_HOME$/And/sdk/extras/android/support/v4" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$USER_HOME$/And/sdk/extras/android/support/v4/src/api23" />
+      <root url="file://$USER_HOME$/And/sdk/extras/android/support/v4/src/java" />
+    </SOURCES>
+    <jarDirectory url="file://$USER_HOME$/And/sdk/extras/android/support/v4" recursive="false" />
+  </library>
+</component>

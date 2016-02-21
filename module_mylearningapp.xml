@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="module_mylearningapp" default="compile.module.mylearningapp">
+  <dirname property="module.mylearningapp.basedir" file="${ant.file.module_mylearningapp}"/>
+  
+  <property name="module.jdk.home.mylearningapp" value="${jdk.home.android_api_23_platform}"/>
+  <property name="module.jdk.bin.mylearningapp" value="${jdk.bin.android_api_23_platform}"/>
+  <property name="module.jdk.classpath.mylearningapp" value="jdk.classpath.android_api_23_platform"/>
+  
+  <property name="compiler.args.mylearningapp" value="-encoding windows-1252 -source 1.7 ${compiler.args}"/>
+  
+  <property name="mylearningapp.output.dir" value="${module.mylearningapp.basedir}/out/production/MyLearningApp"/>
+  <property name="mylearningapp.testoutput.dir" value="${module.mylearningapp.basedir}/out/test/MyLearningApp"/>
+  
+  <path id="mylearningapp.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="mylearningapp.module.production.classpath">
+    <path refid="${module.jdk.classpath.mylearningapp}"/>
+  </path>
+  
+  <path id="mylearningapp.runtime.production.module.classpath">
+    <pathelement location="${mylearningapp.output.dir}"/>
+  </path>
+  
+  <path id="mylearningapp.module.classpath">
+    <path refid="${module.jdk.classpath.mylearningapp}"/>
+    <pathelement location="${mylearningapp.output.dir}"/>
+  </path>
+  
+  <path id="mylearningapp.runtime.module.classpath">
+    <pathelement location="${mylearningapp.testoutput.dir}"/>
+    <pathelement location="${mylearningapp.output.dir}"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.mylearningapp">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.mylearningapp">
+    <patternset refid="excluded.from.module.mylearningapp"/>
+  </patternset>
+  
+  <path id="mylearningapp.module.sourcepath">
+    <dirset dir="${module.mylearningapp.basedir}">
+      <include name="src"/>
+      <include name="gen"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.mylearningapp" depends="compile.module.mylearningapp.production,compile.module.mylearningapp.tests" description="Compile module MyLearningApp"/>
+  
+  <target name="compile.module.mylearningapp.production" depends="register.custom.compilers" description="Compile module MyLearningApp; production classes">
+    <mkdir dir="${mylearningapp.output.dir}"/>
+    <javac2 destdir="${mylearningapp.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.mylearningapp}/javac">
+      <compilerarg line="${compiler.args.mylearningapp}"/>
+      <bootclasspath refid="mylearningapp.module.bootclasspath"/>
+      <classpath refid="mylearningapp.module.production.classpath"/>
+      <src refid="mylearningapp.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.mylearningapp"/>
+    </javac2>
+    
+    <copy todir="${mylearningapp.output.dir}">
+      <fileset dir="${module.mylearningapp.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+      <fileset dir="${module.mylearningapp.basedir}/gen">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.mylearningapp.tests" depends="register.custom.compilers,compile.module.mylearningapp.production" description="compile module MyLearningApp; test classes" unless="skip.tests"/>
+  
+  <target name="clean.module.mylearningapp" description="cleanup module">
+    <delete dir="${mylearningapp.output.dir}"/>
+    <delete dir="${mylearningapp.testoutput.dir}"/>
+  </target>
+</project>
