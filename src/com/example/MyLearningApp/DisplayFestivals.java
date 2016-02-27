@@ -3,6 +3,8 @@ package com.example.MyLearningApp;
 /**
  * Created by Raja.Chirala on 09/02/2016.
  */
+import android.content.Context;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -21,17 +23,20 @@ public class DisplayFestivals extends Activity {
 
     DBHelper mydb;
 
-        @Override
+       @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.display_festivals);
 
             mydb = new DBHelper(this);
-            ArrayList array_list = mydb.getAllFestivals();
-            ArrayAdapter adapter = new ArrayAdapter<String>(this, R.layout.activity_listview, array_list);
+
+
+            ArrayList<FestivalDetails> festival_list = mydb.getAllFestivals();
+
+           //FestivalListAdapter adapter = new FestivalListAdapter(this, R.layout.festival_each_item, festival_list);
 
             ListView listView = (ListView) findViewById(R.id.festivals_list);
-            listView.setAdapter(adapter);
+            listView.setAdapter(new FestivalListAdapter(this, festival_list));
 
         }
 
@@ -56,5 +61,6 @@ public class DisplayFestivals extends Activity {
         }
         return super.onOptionsItemSelected(item);
     }
+
 
 }

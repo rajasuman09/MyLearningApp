@@ -5,6 +5,7 @@ import android.app.*;
 import android.content.Context;
 import android.content.Intent;
 import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
@@ -13,13 +14,14 @@ import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
-import android.widget.DatePicker;
-import android.widget.TextView;
+import android.widget.*;
 import uk.me.jstott.sun.*;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.TimeZone;
 
 import uk.me.jstott.coordconv.LatitudeLongitude;
@@ -37,22 +39,121 @@ public class MainActivity extends Activity {
 
         DBHelper myDbHelper;
         myDbHelper = new DBHelper(this);
+        myDbHelper.initialize();
 
         positionView = (TextView) findViewById(R.id.textView3);
 
-        try {
+     /*   try {
             myDbHelper.createDataBase();
         } catch (IOException ioe) {
             throw new Error("Unable to create database");
-        }
+        }*/
 
-        try {
+     /*   try {
             myDbHelper.openDataBase();
         }catch(SQLException sqle){
             throw sqle;
         }
+*/
+        AlarmReceiver ar = new AlarmReceiver(this);
 
-        b1=(Button)findViewById(R.id.button);
+        Calendar alarm_time = Calendar.getInstance();
+
+        //alarm_time.add(Calendar.DATE,1);
+        alarm_time.setTimeInMillis(System.currentTimeMillis());
+
+        alarm_time.set(Calendar.HOUR_OF_DAY, 23);
+        alarm_time.set(Calendar.MINUTE, 59);
+        alarm_time.set(Calendar.SECOND, 58);
+
+        Intent intentAlarm = new Intent(ar.mContext, AlarmReceiver.class);
+
+        // create the object
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+        //set the alarm for particular time
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,alarm_time.getTimeInMillis(),24*60*60*1000, PendingIntent.getBroadcast(this,1,  intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+
+
+
+        ArrayList array_list;
+        int i = 0;
+        String paksa_name, tithi_name, masa_name;
+
+        double local_longitude = 78.48;
+        double local_latitude = 17.37;
+        double local_offset = 5.5;
+
+        LatitudeLongitude ll2 = new LatitudeLongitude(local_latitude, local_longitude);
+        TimeZone timeZone = TimeZone.getTimeZone("GMT+5:30");
+        final Calendar c = Calendar.getInstance(timeZone);
+        boolean dst = false;
+        Time sunrise = Sun.sunriseTime(c, ll2, timeZone, dst);
+
+        do {
+            int year = c.get(Calendar.YEAR);
+            int month = c.get(Calendar.MONTH);
+            int day = c.get(Calendar.DAY_OF_MONTH);
+            double sun_longitude = getSunLongitude(year, month + 1, day);
+            double moon_longitude = getMoonLongitude(year, month + 1, day);
+            int tithi = getTithi(sun_longitude, moon_longitude);
+
+            int paksa = getPaksa(tithi);
+            paksa_name = getPaksaName(paksa);
+
+            //  double ayanamsa = getAyanamsa(year, month + 1, day);
+
+            // int naksatra = (int) Math.floor(put_in_360(moon_longitude - ayanamsa) * (3 / 40.0));
+
+            // int rasi = getRasi(sun_longitude, ayanamsa);
+
+//
+            masa_name = getMasa(year, month + 1, day, paksa);
+            tithi_name = getTithiName(tithi);
+
+            array_list = myDbHelper.getTodaysEvents(tithi_name, paksa_name, masa_name);
+            c.add(Calendar.DATE, 1);
+            i++;
+        }while(array_list.size()==0);
+
+        c.add(Calendar.DATE, -1);
+        TextView event_heading, event_date, all_festivals, tv_tithi, tv_paksa, tv_masa, tv_sunrise;
+
+        event_heading = (TextView)findViewById(R.id.textView1);
+        event_date = (TextView)findViewById(R.id.textView3);
+        all_festivals = (TextView)findViewById(R.id.viewallevents);
+        tv_tithi = (TextView)findViewById(R.id.tithi);
+        tv_paksa = (TextView)findViewById(R.id.paksa);
+        tv_masa = (TextView)findViewById(R.id.masa);
+        tv_sunrise = (TextView)findViewById(R.id.sunrise);
+
+        tv_tithi.setText("Tithi: "+ tithi_name);
+        tv_paksa.setText("Paksa: "+ paksa_name);
+        tv_masa.setText("Masa: "+ masa_name);
+        tv_sunrise.setText("Sunrise: " + sunrise);
+        all_festivals.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(MainActivity.this, DisplayFestivals.class);
+                startActivity(i);
+            }
+        });
+
+        if(i>1){
+            event_heading.setText("Upcoming Events");
+        }
+        Date date = c.getTime();
+        SimpleDateFormat dateFormatter = new SimpleDateFormat("E, MMMM d, yyyy");
+        event_date.setText(dateFormatter.format(date));
+
+        ArrayAdapter adapter = new ArrayAdapter<String>(this, R.layout.activity_listview, array_list);
+
+        ListView listView = (ListView) findViewById(R.id.today_or_upcoming_events_list);
+        listView.setAdapter(adapter);
+
+
+       /* b1=(Button)findViewById(R.id.button);
 
         b1.setOnClickListener(new View.OnClickListener() {
 
@@ -83,8 +184,10 @@ public class MainActivity extends Activity {
 
         });
 
-
+*/
     }
+
+
     private void Notify(String notificationTitle, String notificationMessage){
         int mId = 1;
         NotificationCompat.Builder mBuilder =
@@ -149,13 +252,11 @@ public class MainActivity extends Activity {
 
         TextView mTextView;
 
-        public DatePickerFragment()
-        {
+        public DatePickerFragment() {
             //
         }
 
-        public DatePickerFragment(TextView textview)
-        {
+        public DatePickerFragment(TextView textview) {
             mTextView = textview;
         }
 
@@ -173,18 +274,18 @@ public class MainActivity extends Activity {
 
         public void onDateSet(DatePicker view, int year, int month, int day) {
             // Do something with the date chosen by the user
+            MainActivity inst = new MainActivity();
+            double sun_longitude = inst.getSunLongitude(year, month + 1, day);
+            double moon_longitude = inst.getMoonLongitude(year, month + 1, day);
+            int tithi = inst.getTithi(sun_longitude, moon_longitude);
 
-            double sun_longitude = getSunLongitude(year, month + 1, day);
-            double moon_longitude = getMoonLongitude(year, month + 1, day);
-            int tithi = getTithi(sun_longitude, moon_longitude);
+            int paksa = inst.getPaksa(tithi);
 
-            int paksa = getPaksa(tithi);
+            double ayanamsa = inst.getAyanamsa(year, month + 1, day);
 
-            double ayanamsa = getAyanamsa(year, month + 1, day);
+            int naksatra = (int) Math.floor(inst.put_in_360(moon_longitude - ayanamsa) * (3 / 40.0));
 
-            int naksatra = (int) Math.floor(put_in_360(moon_longitude - ayanamsa) * (3 / 40.0));
-
-            int rasi = getRasi(sun_longitude, ayanamsa);
+            int rasi = inst.getRasi(sun_longitude, ayanamsa);
 
             double local_longitude = 78.48;
 
@@ -198,14 +299,15 @@ public class MainActivity extends Activity {
             Calendar cal = Calendar.getInstance();
             cal.set(year, month, day);
             Time sunrise = Sun.sunriseTime(cal, ll2, timeZone, dst);
-            String masa = getMasaName(year, month + 1, day);
+            String masa = inst.getMasa(year, month + 1, day, paksa);
             mTextView.setMovementMethod(ScrollingMovementMethod.getInstance());
-            mTextView.setText("Tithi: " + tithi + "\nPaksa: " + paksa + "\nNaksatra:" + naksatra + "\nSun Rise:" + sunrise + "\nAyanamsa:" + ayanamsa
-            + "\nSun Longitude: "+sun_longitude + "\nMoon Longitude:" + moon_longitude);
+            mTextView.setText("Tithi: " + tithi + "\nPaksa: " + paksa + " Masa: " + masa + "\nNaksatra:" + naksatra + "\nSun Rise:" + sunrise + "\nAyanamsa:" + ayanamsa
+                    + "\nSun Longitude: " + sun_longitude + "\nMoon Longitude:" + moon_longitude);
 
         }
+    }
 
-        public String getMasaName(int year, int month, int day) {
+    public String getMasa(int year, int month, int day, int cpaksa) {
 
             int[] rasi = new int[6];
             boolean actual_day;
@@ -282,30 +384,187 @@ public class MainActivity extends Activity {
 
             }
 
+            boolean is_rasi_adjusted = false;
+
+            for(int i = 1; i<=5; i++){
+                if ((rasi[i-1]+2)%12 == rasi[i]){
+                    for(int j=i;j<5;j++){
+                        if(rasi[j+1] == rasi[j]){
+                            for(int k=i;k<=j; k++){
+                                rasi[k] = rasi[k] - 1;
+                            }
+                            is_rasi_adjusted = true;
+                        }
+                    }
+                    if (is_rasi_adjusted == false){
+                        for(int k=i;k<=5;k++){
+                            rasi[k] = rasi[k] - 1;
+                        }
+                    }
+                }
+            }
+
+            if(rasi[3] == rasi[4]){
+                masa = getMasaName(rasi[3]);
+            }
+            else{
+                if(cpaksa==0){
+                    masa = getMasaName(rasi[4]);
+                }
+                else{
+                    masa = getMasaName(rasi[3]);
+                }
+            }
         return masa;
         }
 
-        public int getRasi(double sun_longitude, double ayanamsa){
+        public String getMasaName(int rasi){
+            String masa = "";
+            switch (rasi){
+                case 0:
+                    masa = "Madhusudana";
+                    break;
+                case 1:
+                    masa = "Trivikrama";
+                    break;
+                case 2:
+                    masa = "Vamana";
+                    break;
+                case 3:
+                    masa = "Sridhara";
+                    break;
+                case 4:
+                    masa = "Hrsikesa";
+                    break;
+                case 5:
+                    masa = "Padmanabha";
+                    break;
+                case 6:
+                    masa = "Damodara";
+                    break;
+                case 7:
+                    masa = "Kesava";
+                    break;
+                case 8:
+                    masa = "Narayana";
+                    break;
+                case 9:
+                    masa = "Madhava";
+                    break;
+                case 10:
+                    masa = "Govinda";
+                    break;
+                case 11:
+                    masa = "Visnu";
+                    break;
+            }
+            return masa;
+        }
+
+    public String getTithiName(int tithi){
+        String tithi_name = "";
+        switch (tithi){
+            case 0:
+            case 15:
+                tithi_name = "Pratipat";
+                break;
+            case 1:
+            case 16:
+                tithi_name = "Dvitiya";
+                break;
+            case 2:
+            case 17:
+                tithi_name = "Tritiya";
+                break;
+            case 3:
+            case 18:
+                tithi_name = "Caturthi";
+                break;
+            case 4:
+            case 19:
+                tithi_name = "Pancami";
+                break;
+            case 5:
+            case 20:
+                tithi_name = "Sasti";
+                break;
+            case 6:
+            case 21:
+                tithi_name = "Saptami";
+                break;
+            case 7:
+            case 22:
+                tithi_name = "Astami";
+                break;
+            case 8:
+            case 23:
+                tithi_name = "Navami";
+                break;
+            case 9:
+            case 24:
+                tithi_name = "Dasami";
+                break;
+            case 10:
+            case 25:
+                tithi_name = "Ekadasi";
+                break;
+            case 11:
+            case 26:
+                tithi_name = "Dvadasi";
+                break;
+            case 12:
+            case 27:
+                tithi_name = "Trayodasi";
+                break;
+            case 13:
+            case 28:
+                tithi_name = "Caturdasi";
+                break;
+            case 14:
+                tithi_name = "Amavasya";
+                break;
+            case 29:
+                tithi_name = "Purnima";
+                break;
+        }
+        return tithi_name;
+    }
+
+    public int getRasi(double sun_longitude, double ayanamsa){
             return (int) Math.floor(put_in_360(sun_longitude - ayanamsa) / 30.0);
         }
 
-        public int getPaksa(int tithi){
-            return (int) Math.floor(tithi / 15);
+    public int getPaksa(int tithi) {
+        return (int) Math.floor(tithi / 15);
+
+    }
+
+    public String getPaksaName(int paksa) {
+
+        String tithi_name;
+
+        if (paksa == 0) {
+            tithi_name = "Krishna";
+        } else {
+            tithi_name = "Gaura";
         }
 
-        public double getAyanamsa(int year, int month, int day){
+        return tithi_name;
+    }
+
+    public double getAyanamsa(int year, int month, int day){
             double a = 16.90709 * year/1000 - 0.757371 * year/1000 * year/1000 - 6.92416100010001000;
             double b = (month-1 + day/30) * 1.1574074/1000;
             return a+b;
 
         }
 
-        public int getTithi(double sun_longitude, double moon_longitude){
+    public int getTithi(double sun_longitude, double moon_longitude){
             double tithi = Math.floor(put_in_360(moon_longitude - sun_longitude - 180.0)/12.0);
             return (int) tithi;
         }
 
-        public double getSunLongitude(int year, int month, int day){
+    public double getSunLongitude(int year, int month, int day){
 
             final double PI = 3.14159265358979323846;
             int d = 367*year - (7*(year + ((month+9)/12)))/4 + (275*month)/9 + day - 730530;
@@ -329,7 +588,7 @@ public class MainActivity extends Activity {
 
         }
 
-        public double getMoonLongitude(int year, int month, int day){
+    public double getMoonLongitude(int year, int month, int day){
 
             final double PI = 3.14159265358979323846;
             int d = 367*year - (7*(year + ((month+9)/12)))/4 + (275*month)/9 + day - 730530;
@@ -403,13 +662,15 @@ public class MainActivity extends Activity {
 
         }
 
-        double put_in_360(double x){
+    double put_in_360(double x){
             double result = x - Math.round(x/360)*360;
             while(result < 0)
                 result = result + 360;
 
             return result;
         }
-    }
+
+
 
 }
+

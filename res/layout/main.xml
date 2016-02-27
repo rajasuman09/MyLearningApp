@@ -5,91 +5,137 @@
                 android:layout_height="match_parent"
                 android:paddingLeft="@dimen/activity_horizontal_margin"
                 android:paddingRight="@dimen/activity_horizontal_margin"
-                android:paddingTop="@dimen/activity_vertical_margin"
-                android:paddingBottom="@dimen/activity_vertical_margin"
+                android:background="@color/blue"
                 tools:context=".MainActivity">
 
-    <ImageButton
+    <ImageView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/imageButton"
+            android:id="@+id/imageView"
             android:src="@drawable/gauranitai"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true" />
+
+      <LinearLayout
+            android:id="@+id/today_details"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/imageView"
+            android:paddingTop="@dimen/activity_vertical_margin"
+            android:orientation="vertical">
+
+          <TextView
+                  android:id="@+id/heading"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:gravity="center"
+                  android:layout_alignParentTop="true"
+                  android:text="Today"
+                  android:layout_centerHorizontal="true"
+                  android:textColor="#ff87ff09"
+                  android:textSize="25dp" />
+
+           <LinearLayout
+                   android:layout_width="fill_parent"
+                   android:layout_height="wrap_content"
+                   android:gravity="center_horizontal"
+                   android:background="#588539"
+                   android:paddingTop="10sp"
+                   android:orientation="horizontal">
+
+               <TextView
+                       android:id="@+id/tithi"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tithi"
+                android:layout_marginRight="20dp"
+                android:textStyle="bold"
+                android:textColor="#ff87ff09"
+                />
+
+               <TextView
+                       android:id="@+id/paksa"
+                       android:layout_width="wrap_content"
+                       android:layout_height="wrap_content"
+                       android:text="Paksa"
+                       android:textStyle="bold"
+                       android:layout_marginRight="20dp"
+                       android:textColor="#ff87ff09"
+                />
+
+               <TextView
+                       android:id="@+id/masa"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="Masa"
+                  android:textStyle="bold"
+                  android:textColor="#ff87ff09"
+                  />
+           </LinearLayout>
+
+          <TextView
+                  android:id="@+id/sunrise"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:gravity="center"
+                  android:text="Sunrise"
+                  android:background="#588539"
+                  android:layout_centerHorizontal="true"
+                  android:textStyle="bold"
+                  android:paddingBottom="10sp"
+                  android:textColor="#ff87ff09"/>
+
+      </LinearLayout>
 
     <TextView
             android:id="@+id/textView1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Sri Nityananda Trayodashi"
-            android:layout_alignParentLeft="true"
+            android:gravity="center"
+            android:text="Events Today"
             android:layout_centerHorizontal="true"
-            android:layout_below="@+id/imageButton"
-            android:textSize="15dp" />
+            android:textColor="#ff87ff09"
+            android:paddingTop="10dp"
+            android:layout_below="@+id/today_details"
+            android:textSize="25dp" />
 
     <TextView
-            android:id="@+id/textView2"
+            android:id="@+id/viewallevents"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Gaura Purnima"
+            android:text="View All Events"
+            android:gravity="center"
             android:textColor="#ff87ff09"
             android:textSize="15dp"
+            android:clickable="true"
             android:layout_below="@+id/textView1"
             android:layout_centerHorizontal="true" />
-
-    <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Start Browser"
-            android:id="@+id/button"
-            android:layout_below="@+id/textView2"
-            android:layout_alignLeft="@+id/imageButton"
-            android:layout_alignStart="@+id/imageButton"
-            android:layout_alignRight="@+id/textView2"
-            android:layout_centerHorizontal="true"/>
-
-    <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Festivals List"
-            android:id="@+id/button2"
-            android:layout_below="@+id/button"
-            android:layout_alignLeft="@+id/button"
-            android:layout_alignStart="@+id/button"
-            android:layout_alignRight="@+id/textView2"
-            android:layout_alignEnd="@+id/textView2" />
-
-    <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Notification"
-            android:id="@+id/button3"
-            android:layout_below="@+id/button2"
-            android:layout_alignLeft="@+id/button2"
-            android:layout_alignStart="@+id/button2"
-            android:layout_alignRight="@+id/textView2"
-            android:layout_alignEnd="@+id/textView2" />
-
-    <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Pick a Date"
-            android:id="@+id/button4"
-            android:onClick="showDatePickerDialog"
-            android:layout_below="@+id/button3"
-            android:layout_alignLeft="@+id/button3"
-            android:layout_alignRight="@+id/textView2"
-            android:layout_alignStart="@+id/button3"/>
 
     <TextView
             android:id="@+id/textView3"
             android:layout_width="match_parent"
-            android:layout_height="500dp"
-            android:text=""
+            android:layout_height="wrap_content"
+            android:text="Date"
+            android:gravity="center"
             android:textColor="#ff87ff09"
-            android:textSize="12dp"
-            android:layout_below="@+id/button4"
+            android:textSize="20dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:layout_below="@+id/viewallevents"
             android:layout_centerHorizontal="true" />
+
+    <ListView
+            android:id="@+id/today_or_upcoming_events_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="0dp"
+            android:paddingLeft="0dp"
+            android:paddingRight="0dp"
+            android:background="#FFFFFF"
+            android:layout_below="@+id/textView3">
+    </ListView>
 
 
 </RelativeLayout>

@@ -4,13 +4,20 @@ package com.example.MyLearningApp;
  * Created by Raja.Chirala on 09/02/2016.
  */
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteDatabase;
+import android.preference.PreferenceManager;
+import android.util.Log;
 
 
 public class DBHelper extends SQLiteOpenHelper{
@@ -19,6 +26,8 @@ public class DBHelper extends SQLiteOpenHelper{
     private static String DB_NAME = "VCal.sqlite";
     private SQLiteDatabase myDataBase;
     private final Context myContext;
+    private static final int DATABASE_VERSION = 2;
+    private static final String SP_KEY_DB_VER = "db_ver";
 
     /**
      * Constructor
@@ -27,7 +36,7 @@ public class DBHelper extends SQLiteOpenHelper{
      */
 
     public DBHelper(Context context) {
-        super(context, DB_NAME, null, 1);
+        super(context, DB_NAME, null, DATABASE_VERSION);
         DB_PATH = context.getApplicationInfo().dataDir + "/databases/";
         this.myContext = context;
 
@@ -35,6 +44,44 @@ public class DBHelper extends SQLiteOpenHelper{
         if (!f.exists()) {
             f.mkdir();
         }
+
+    }
+
+    /**
+     * Initializes database. Creates database if doesn't exist.
+     */
+    public void initialize() {
+        if (databaseExists()) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(myContext);
+            int dbVersion = prefs.getInt(SP_KEY_DB_VER, 1);
+            try {
+                openDataBase();
+            }catch(SQLException sqle){
+                throw sqle;
+            }
+            if (DATABASE_VERSION !=  myDataBase.getVersion()) {
+                File dbFile = myContext.getDatabasePath(DB_NAME);
+                if (!dbFile.delete()) {
+                    Log.w("DBHelper","Unable to update database");
+                }
+            }
+        }
+        if (!databaseExists()) {
+            try {
+                createDataBase();
+            } catch (IOException ioe) {
+                throw new Error("Unable to create database");
+            }
+        }
+    }
+
+    /**
+     * Returns true if database file exists, false otherwise.
+     * @return
+     */
+    private boolean databaseExists() {
+        File dbFile = myContext.getDatabasePath(DB_NAME);
+        return dbFile.exists();
     }
 
     /**
@@ -50,13 +97,14 @@ public class DBHelper extends SQLiteOpenHelper{
 
             //By calling this method an empty database will be created into the default system path
             //of your application so we are gonna be able to overwrite that database with our database.
-            SQLiteDatabase db = this.getReadableDatabase();
+            SQLiteDatabase db = this.getWritableDatabase();
             if (db.isOpen()){
                 db.close();
             }
 
             try {
                 copyDataBase();
+                calculate_festival_days(Calendar.getInstance().get(Calendar.YEAR));
             } catch (IOException e) {
                 throw new Error("Error copying database");
             }
@@ -153,22 +201,81 @@ public class DBHelper extends SQLiteOpenHelper{
     // You could return cursors by doing "return myDataBase.query(....)" so it'd be easy
     // to you to create adapters for your views.
 
-    public ArrayList<String> getAllFestivals()
+    public ArrayList<FestivalDetails> getAllFestivals()
+    {
+        ArrayList<FestivalDetails> array_list = new ArrayList<FestivalDetails>();
+        FestivalDetails fd;
+        //DisplayFestivals df = new DisplayFestivals();
+        //hp = new HashMap();
+        //context.getDatabasePath(DB_N
+        // AME).getPath();
+        myDataBase = this.getWritableDatabase();
+        Cursor res =  myDataBase.rawQuery( "select * from festivals where calendar_date is NOT NULL order by calendar_date ASC", null );
+        //FestivalListAdapter festivalListAdapter = new FestivalListAdapter(df, res);
+        res.moveToFirst();
+
+        while(res.isAfterLast() == false){
+            fd = new FestivalDetails();
+            fd.setEventDate(res.getString(res.getColumnIndex("calendar_date")));
+            fd.setEventName(res.getString(res.getColumnIndex("event_name")));
+            array_list.add(fd);
+            res.moveToNext();
+        }
+        res.close();
+        return array_list;
+    }
+
+    public ArrayList<String> getTodaysEvents(String tithi_name, String paksa_name, String masa_name)
     {
         ArrayList<String> array_list = new ArrayList<String>();
+        final Calendar c = Calendar.getInstance();
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int day = c.get(Calendar.DAY_OF_MONTH);
 
         //hp = new HashMap();
         //context.getDatabasePath(DB_N
         // AME).getPath();
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor res =  db.rawQuery( "select * from festivals", null );
+        myDataBase = this.getWritableDatabase();
+        Cursor res =  myDataBase.rawQuery( "select * from festivals where tithi='"+tithi_name + "' and paksa='"+ paksa_name + "' and masa='"+ masa_name + "'", null );
         res.moveToFirst();
+        //res.getCount()
 
         while(res.isAfterLast() == false){
             array_list.add(res.getString(res.getColumnIndex("event_name")));
             res.moveToNext();
         }
+        res.close();
         return array_list;
     }
+
+    private void calculate_festival_days(int year){
+        Calendar event_tracker = Calendar.getInstance();
+
+        event_tracker.set(year, 0, 1);
+        MainActivity helper = new MainActivity();
+        do{
+            int month = event_tracker.get(Calendar.MONTH);
+            int day = event_tracker.get(Calendar.DAY_OF_MONTH);
+            double sun_longitude = helper.getSunLongitude(year, month + 1, day);
+            double moon_longitude = helper.getMoonLongitude(year, month + 1, day);
+            int tithi = helper.getTithi(sun_longitude, moon_longitude);
+
+            int paksa = helper.getPaksa(tithi);
+            String paksa_name = helper.getPaksaName(paksa);//
+            String masa_name = helper.getMasa(year, month + 1, day, paksa);
+            String tithi_name = helper.getTithiName(tithi);
+            Date date = event_tracker.getTime();
+            SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+
+            String strSQL = "UPDATE festivals SET calendar_date = '" + dateFormatter.format(date) + "' WHERE tithi = '" + tithi_name + "' AND paksa = '" + paksa_name + "' AND masa = '" + masa_name + "'";
+
+            myDataBase = this.getWritableDatabase();
+            myDataBase.execSQL(strSQL);
+            event_tracker.add(Calendar.DATE,1);
+        } while(event_tracker.get(Calendar.YEAR) == year);
+
+    }
+
 }
 
