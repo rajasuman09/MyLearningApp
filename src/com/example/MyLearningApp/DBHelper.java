@@ -8,15 +8,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteDatabase;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 
@@ -26,8 +23,7 @@ public class DBHelper extends SQLiteOpenHelper{
     private static String DB_NAME = "VCal.sqlite";
     private SQLiteDatabase myDataBase;
     private final Context myContext;
-    private static final int DATABASE_VERSION = 2;
-    private static final String SP_KEY_DB_VER = "db_ver";
+    private static final int DATABASE_VERSION = 4;
 
     /**
      * Constructor
@@ -52,8 +48,6 @@ public class DBHelper extends SQLiteOpenHelper{
      */
     public void initialize() {
         if (databaseExists()) {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(myContext);
-            int dbVersion = prefs.getInt(SP_KEY_DB_VER, 1);
             try {
                 openDataBase();
             }catch(SQLException sqle){
@@ -104,12 +98,23 @@ public class DBHelper extends SQLiteOpenHelper{
 
             try {
                 copyDataBase();
-                calculate_festival_days(Calendar.getInstance().get(Calendar.YEAR));
+                final Thread t = new Thread() {
+                    @Override
+                    public void run() {
+                        try {
+                            calculate_festival_days(Calendar.getInstance().get(Calendar.YEAR));
+                            }
+                            catch (Exception e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                        }
+                    };
+                t.start();
             } catch (IOException e) {
                 throw new Error("Error copying database");
             }
         }
-
     }
 
     /**
@@ -131,9 +136,7 @@ public class DBHelper extends SQLiteOpenHelper{
         }
 
         if(checkDB != null){
-
             checkDB.close();
-
         }
 
         return checkDB != null ? true : false;
@@ -205,13 +208,8 @@ public class DBHelper extends SQLiteOpenHelper{
     {
         ArrayList<FestivalDetails> array_list = new ArrayList<FestivalDetails>();
         FestivalDetails fd;
-        //DisplayFestivals df = new DisplayFestivals();
-        //hp = new HashMap();
-        //context.getDatabasePath(DB_N
-        // AME).getPath();
-        myDataBase = this.getWritableDatabase();
-        Cursor res =  myDataBase.rawQuery( "select * from festivals where calendar_date is NOT NULL order by calendar_date ASC", null );
-        //FestivalListAdapter festivalListAdapter = new FestivalListAdapter(df, res);
+        myDataBase = this.getReadableDatabase();
+        Cursor res =  myDataBase.rawQuery( "select * from festivals where calendar_date is not null order by calendar_date ASC", null );
         res.moveToFirst();
 
         while(res.isAfterLast() == false){
@@ -222,59 +220,81 @@ public class DBHelper extends SQLiteOpenHelper{
             res.moveToNext();
         }
         res.close();
+        myDataBase.close();
         return array_list;
     }
 
     public ArrayList<String> getTodaysEvents(String tithi_name, String paksa_name, String masa_name)
     {
         ArrayList<String> array_list = new ArrayList<String>();
-        final Calendar c = Calendar.getInstance();
-        int year = c.get(Calendar.YEAR);
-        int month = c.get(Calendar.MONTH);
-        int day = c.get(Calendar.DAY_OF_MONTH);
 
-        //hp = new HashMap();
-        //context.getDatabasePath(DB_N
-        // AME).getPath();
-        myDataBase = this.getWritableDatabase();
+        myDataBase = this.getReadableDatabase();
         Cursor res =  myDataBase.rawQuery( "select * from festivals where tithi='"+tithi_name + "' and paksa='"+ paksa_name + "' and masa='"+ masa_name + "'", null );
         res.moveToFirst();
-        //res.getCount()
 
         while(res.isAfterLast() == false){
             array_list.add(res.getString(res.getColumnIndex("event_name")));
             res.moveToNext();
         }
         res.close();
+        myDataBase.close();
         return array_list;
     }
 
-    private void calculate_festival_days(int year){
+    public void calculate_festival_days(int year){
         Calendar event_tracker = Calendar.getInstance();
-
         event_tracker.set(year, 0, 1);
         MainActivity helper = new MainActivity();
+        myDataBase = this.getWritableDatabase();
+        String strSQL = "UPDATE festivals SET calendar_date = NULL";
+        myDataBase.execSQL(strSQL);
         do{
             int month = event_tracker.get(Calendar.MONTH);
             int day = event_tracker.get(Calendar.DAY_OF_MONTH);
             double sun_longitude = helper.getSunLongitude(year, month + 1, day);
             double moon_longitude = helper.getMoonLongitude(year, month + 1, day);
             int tithi = helper.getTithi(sun_longitude, moon_longitude);
-
             int paksa = helper.getPaksa(tithi);
-            String paksa_name = helper.getPaksaName(paksa);//
-            String masa_name = helper.getMasa(year, month + 1, day, paksa);
+            String paksa_name = helper.getPaksaName(paksa);
+            String masa_name = helper.getMasa(year, month, day, paksa);
             String tithi_name = helper.getTithiName(tithi);
             Date date = event_tracker.getTime();
             SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
 
-            String strSQL = "UPDATE festivals SET calendar_date = '" + dateFormatter.format(date) + "' WHERE tithi = '" + tithi_name + "' AND paksa = '" + paksa_name + "' AND masa = '" + masa_name + "'";
+            strSQL = "UPDATE festivals SET calendar_date = '" + dateFormatter.format(date) + "' WHERE tithi = '" + tithi_name + "' AND paksa = '" + paksa_name + "' AND masa = '" + masa_name + "'";
 
-            myDataBase = this.getWritableDatabase();
             myDataBase.execSQL(strSQL);
             event_tracker.add(Calendar.DATE,1);
         } while(event_tracker.get(Calendar.YEAR) == year);
 
+        myDataBase.close();
+
+    }
+
+    public boolean is_current_year_data(){
+        boolean is_current_year;
+        Calendar current_date = Calendar.getInstance();
+        myDataBase = this.getReadableDatabase();
+      //  Cursor res =  myDataBase.rawQuery("SELECT strftime('%Y', calendar_date) year,  calendar_date FROM festivals WHERE calendar_date IS NOT NULL LIMIT 1", null);
+        Cursor res =  myDataBase.rawQuery( "select strftime('%Y', calendar_date) year from festivals where calendar_date IS NOT NULL", null );
+
+        res.moveToFirst();
+        int year=0;
+
+        if(res.isAfterLast() == false) {
+            year = res.getInt(0);
+        }
+
+        if(current_date.get(Calendar.YEAR) == year){
+            is_current_year = true;
+        }
+        else{
+            is_current_year = false;
+        }
+        res.close();
+        myDataBase.close();
+
+        return is_current_year;
     }
 
 }

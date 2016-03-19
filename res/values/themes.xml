@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="MyCustomTheme" parent="android:style/Theme">
-    <item name="android:buttonStyle">@style/MyCustomButton</item>
+        <item name="android:buttonStyle">@style/MyCustomButton</item>
+        <item name="android:activatedBackgroundIndicator">@drawable/selector</item>
 </style>
 </resources>

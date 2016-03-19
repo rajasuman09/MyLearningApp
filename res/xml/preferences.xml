@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+            android:key="pref_timezone"
+            android:title="Time Zone"
+            android:summary="India Standard TIme"
+            android:enabled="false"/>
+    <SwitchPreference
+            android:key="@string/pref_location_switch"
+            android:title="Get Present Location"
+            android:defaultValue="false"/>
+    <EditTextPreference
+            android:key="pref_location"
+            android:title="Location"
+            android:summary="Mayapur"
+            android:enabled="false"/>
+</PreferenceScreen>

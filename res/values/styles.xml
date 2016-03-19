@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
     <style name="MyCustomButton" parent="android:Widget.Button">
         <item name="android:background">@drawable/my_nine_patch</item>
     </style>
     <style name="AppBaseTheme" parent="android:Theme.Holo.Light">
         <!-- API 14 theme customizations can go here. -->
         <item name="android:actionBarStyle">@style/MyActionBar</item>
+        <item name="android:spinnerDropDownItemStyle">@style/myapp.Widget.DropDownItem.Spinner</item>
+
     </style>
 
     <style name="MyActionBar" parent="@android:style/Widget.Holo.Light.ActionBar">
@@ -16,4 +18,14 @@
     <style name="Theme.MyAppTheme.ActionBar.TitleTextStyle" parent="android:style/TextAppearance.Holo.Widget.ActionBar.Title">
         <item name="android:textColor">#FFFFFF</item>
     </style>
+
+    <style name="myapp.Widget.DropDownItem.Spinner" parent="android:style/Widget.DropDownItem.Spinner">
+        <item name="android:textAppearance">@style/myapp.TextAppearance.Widget.DropDownItem</item>
+    </style>
+
+    <style name="myapp.TextAppearance.Widget.DropDownItem" parent="android:style/TextAppearance.Widget.DropDownItem">
+        <item name="android:textColor">@color/orange</item>
+    </style>
+
+
 </resources>

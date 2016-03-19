@@ -1,17 +1,13 @@
 package com.example.MyLearningApp;
 
-
 import android.app.*;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.net.Uri;
-import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
-
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -37,7 +33,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         MainActivity ma = new MainActivity();
         TimeZone timeZone = TimeZone.getTimeZone("GMT+5:30");
         final Calendar c = Calendar.getInstance(timeZone);
-        c.add(Calendar.MINUTE,1);
+        c.add(Calendar.DATE,1);
         int year = c.get(Calendar.YEAR);
         int month = c.get(Calendar.MONTH);
         int day = c.get(Calendar.DAY_OF_MONTH);
@@ -47,20 +43,17 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         int paksa = ma.getPaksa(tithi);
         String paksa_name = ma.getPaksaName(paksa);
-        String masa_name = ma.getMasa(year, month + 1, day, paksa);
+        String masa_name = ma.getMasa(year, month, day, paksa);
         String tithi_name = ma.getTithiName(tithi);
+
 
         ArrayList array_list = dbHelper.getTodaysEvents(tithi_name, paksa_name, masa_name);
 
-        Notify("Haribol", "Alert! " + array_list.size() + " Events Today", context);
-
+        if(array_list.size() > 0) {
+            Notify("Haribol", "Alert! " + array_list.size() + " Events Tomorrow", context);
+        }
     }
 
-
-
-  //  public void onCreate(Bundle savedInstanceState) {
-    //    Notify("Haribol", "You've received new message");
-   // }
 
     private void Notify(String notificationTitle, String notificationMessage, Context context) {
         int mId = 1;

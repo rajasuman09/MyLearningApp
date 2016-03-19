@@ -3,68 +3,60 @@ package com.example.MyLearningApp;
 
 import android.app.*;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.SQLException;
-import android.database.sqlite.SQLiteDatabase;
-import android.net.Uri;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.TaskStackBuilder;
-import android.text.method.ScrollingMovementMethod;
+import android.preference.Preference;
+import android.preference.PreferenceFragment;
+import android.preference.PreferenceManager;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
-import uk.me.jstott.sun.*;
 
-import java.io.IOException;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import org.w3c.dom.Text;
+import uk.me.jstott.sun.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
-
 import uk.me.jstott.coordconv.LatitudeLongitude;
 
 
 public class MainActivity extends Activity {
 
-    Button b1, b2, b3;
-    TextView positionView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+      //  PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        // Acquire a reference to the system Location Manager
+
 
         DBHelper myDbHelper;
         myDbHelper = new DBHelper(this);
         myDbHelper.initialize();
 
-        positionView = (TextView) findViewById(R.id.textView3);
-
-     /*   try {
-            myDbHelper.createDataBase();
-        } catch (IOException ioe) {
-            throw new Error("Unable to create database");
-        }*/
-
-     /*   try {
-            myDbHelper.openDataBase();
-        }catch(SQLException sqle){
-            throw sqle;
-        }
-*/
         AlarmReceiver ar = new AlarmReceiver(this);
-
         Calendar alarm_time = Calendar.getInstance();
-
-        //alarm_time.add(Calendar.DATE,1);
         alarm_time.setTimeInMillis(System.currentTimeMillis());
 
-        alarm_time.set(Calendar.HOUR_OF_DAY, 23);
-        alarm_time.set(Calendar.MINUTE, 59);
-        alarm_time.set(Calendar.SECOND, 58);
+        alarm_time.set(Calendar.HOUR_OF_DAY, 20);
+        alarm_time.set(Calendar.MINUTE, 00);
+        alarm_time.set(Calendar.SECOND, 00);
 
         Intent intentAlarm = new Intent(ar.mContext, AlarmReceiver.class);
 
@@ -74,11 +66,9 @@ public class MainActivity extends Activity {
         //set the alarm for particular time
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,alarm_time.getTimeInMillis(),24*60*60*1000, PendingIntent.getBroadcast(this,1,  intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
 
-
-
         ArrayList array_list;
-        int i = 0;
-        String paksa_name, tithi_name, masa_name;
+        int i = 0, gaurabda;
+        String paksa_name, tithi_name, masa_name, naksatra_name;
 
         double local_longitude = 78.48;
         double local_latitude = 17.37;
@@ -90,57 +80,81 @@ public class MainActivity extends Activity {
         boolean dst = false;
         Time sunrise = Sun.sunriseTime(c, ll2, timeZone, dst);
 
-        do {
-            int year = c.get(Calendar.YEAR);
-            int month = c.get(Calendar.MONTH);
-            int day = c.get(Calendar.DAY_OF_MONTH);
-            double sun_longitude = getSunLongitude(year, month + 1, day);
-            double moon_longitude = getMoonLongitude(year, month + 1, day);
-            int tithi = getTithi(sun_longitude, moon_longitude);
+        int bm_minutes = sunrise.getHours()*60 + sunrise.getMinutes() - 96;
+        int bm_hours = (int) (bm_minutes / 60.0);
+        bm_minutes = (int) (bm_minutes - (bm_hours * 60));
+        Time brahma_muhurta_start = new Time(bm_hours, bm_minutes, sunrise.getSeconds());
 
-            int paksa = getPaksa(tithi);
-            paksa_name = getPaksaName(paksa);
+        bm_minutes = sunrise.getHours()*60 + sunrise.getMinutes() - 48;
+        bm_hours = (int) (bm_minutes / 60.0);
+        bm_minutes = (int) (bm_minutes - (bm_hours * 60));
+        Time brahma_muhurta_end = new Time(bm_hours, bm_minutes, sunrise.getSeconds());
 
-            //  double ayanamsa = getAyanamsa(year, month + 1, day);
 
-            // int naksatra = (int) Math.floor(put_in_360(moon_longitude - ayanamsa) * (3 / 40.0));
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+        double sun_longitude = getSunLongitude(year, month + 1, day);
+        double moon_longitude = getMoonLongitude(year, month + 1, day);
+        int tithi = getTithi(sun_longitude, moon_longitude);
 
-            // int rasi = getRasi(sun_longitude, ayanamsa);
+        int paksa = getPaksa(tithi);
+        paksa_name = getPaksaName(paksa);
 
-//
-            masa_name = getMasa(year, month + 1, day, paksa);
-            tithi_name = getTithiName(tithi);
+        masa_name = getMasa(year, month, day, paksa);
+        tithi_name = getTithiName(tithi);
+        double ayanamsa = getAyanamsa(year, month + 1, day);
+        int naksatra = (int) Math.floor(put_in_360(moon_longitude - ayanamsa) * (3 / 40.0));
+        naksatra_name = getNaksatraName(naksatra);
+        gaurabda = getGaurabdaYear(year, masa_name, month);
 
-            array_list = myDbHelper.getTodaysEvents(tithi_name, paksa_name, masa_name);
-            c.add(Calendar.DATE, 1);
-            i++;
-        }while(array_list.size()==0);
-
-        c.add(Calendar.DATE, -1);
-        TextView event_heading, event_date, all_festivals, tv_tithi, tv_paksa, tv_masa, tv_sunrise;
+        TextView event_heading, event_date, all_festivals, tv_tithi, tv_paksa, tv_masa, tv_sunrise, tv_naksatra, tv_gaurabda, tv_bm_start, tv_bm_end;
 
         event_heading = (TextView)findViewById(R.id.textView1);
         event_date = (TextView)findViewById(R.id.textView3);
         all_festivals = (TextView)findViewById(R.id.viewallevents);
+        TextView date_check = (TextView)findViewById(R.id.datecheck);
         tv_tithi = (TextView)findViewById(R.id.tithi);
         tv_paksa = (TextView)findViewById(R.id.paksa);
         tv_masa = (TextView)findViewById(R.id.masa);
         tv_sunrise = (TextView)findViewById(R.id.sunrise);
+        tv_naksatra = (TextView)findViewById(R.id.naksatra);
+        tv_gaurabda = (TextView)findViewById(R.id.gaurabda);
+        tv_bm_start = (TextView)findViewById(R.id.brahma_muhurta_start);
+        tv_bm_end = (TextView)findViewById(R.id.brahma_muhurta_end);
 
         tv_tithi.setText("Tithi: "+ tithi_name);
         tv_paksa.setText("Paksa: "+ paksa_name);
         tv_masa.setText("Masa: "+ masa_name);
         tv_sunrise.setText("Sunrise: " + sunrise);
-        all_festivals.setOnClickListener(new View.OnClickListener() {
+        tv_naksatra.setText("Naksatra: " + naksatra_name);
+        tv_bm_start.setText("Brahma Muhurta: " + brahma_muhurta_start);
+        tv_bm_end.setText("  to  " + brahma_muhurta_end);
+        tv_gaurabda.setText("Gaurabda: " + gaurabda);
 
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(MainActivity.this, DisplayFestivals.class);
-                startActivity(i);
-            }
-        });
+        array_list = myDbHelper.getTodaysEvents(tithi_name, paksa_name, masa_name);
 
-        if(i>1){
+        while(array_list.size()==0) {
+            c.add(Calendar.DATE, 1);
+            year = c.get(Calendar.YEAR);
+            month = c.get(Calendar.MONTH);
+            day = c.get(Calendar.DAY_OF_MONTH);
+            sun_longitude = getSunLongitude(year, month + 1, day);
+            moon_longitude = getMoonLongitude(year, month + 1, day);
+            tithi = getTithi(sun_longitude, moon_longitude);
+
+            paksa = getPaksa(tithi);
+            paksa_name = getPaksaName(paksa);
+
+            masa_name = getMasa(year, month, day, paksa);
+            tithi_name = getTithiName(tithi);
+
+            array_list = myDbHelper.getTodaysEvents(tithi_name, paksa_name, masa_name);
+
+            i++;
+        };
+
+        if(i>0){
             event_heading.setText("Upcoming Events");
         }
         Date date = c.getTime();
@@ -152,20 +166,8 @@ public class MainActivity extends Activity {
         ListView listView = (ListView) findViewById(R.id.today_or_upcoming_events_list);
         listView.setAdapter(adapter);
 
-
-       /* b1=(Button)findViewById(R.id.button);
-
-        b1.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(android.content.Intent.ACTION_VIEW,Uri.parse("http://www.example.com"));
-                startActivity(i);
-            }
-        });
-
-        b2=(Button)findViewById(R.id.button2);
-        b2.setOnClickListener(new View.OnClickListener() {
+        //Set listener on TextView in main activity
+        all_festivals.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
@@ -174,50 +176,119 @@ public class MainActivity extends Activity {
             }
         });
 
-        b3=(Button)findViewById(R.id.button3);
-        b3.setOnClickListener(new View.OnClickListener() {
+        //Set listener on TextView in main activity
+        date_check.setOnClickListener(new View.OnClickListener() {
 
-           @Override
-           public void onClick(View v) {
-            Notify("Haribol", "You've received new message");
-                }
-
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(MainActivity.this, DateCheck.class);
+                startActivity(i);
+            }
         });
 
-*/
+
+
     }
 
+    private int getGaurabdaYear(int year, String masa_name, int month){
+        int GYear = year - 1486;
 
-    private void Notify(String notificationTitle, String notificationMessage){
-        int mId = 1;
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this)
-                        .setSmallIcon(R.drawable.vaishnavacalendarlogo)
-                        .setContentTitle(notificationTitle)
-                        .setContentText(notificationMessage);
-        // Creates an explicit intent for an Activity in your app
-        Intent resultIntent = new Intent(this, MainActivity.class);
-
-        // The stack builder object will contain an artificial back stack for the
-        // started Activity.
-        // This ensures that navigating backward from the Activity leads out of
-        // your application to the Home screen.
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-        // Adds the back stack for the Intent (but not the Intent itself)
-        stackBuilder.addParentStack(MainActivity.class);
-        // Adds the Intent that starts the Activity to the top of the stack
-        stackBuilder.addNextIntent(resultIntent);
-        PendingIntent resultPendingIntent =
-                stackBuilder.getPendingIntent(
-                        0,
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                );
-        mBuilder.setContentIntent(resultPendingIntent);
-        NotificationManager mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        // mId allows you to update the notification later on.
-        mNotificationManager.notify(mId, mBuilder.build());
+        if(masa_name == "Kesava" || masa_name == "Narayana" || masa_name == "Madhava" || masa_name == "Govinda"){
+            if (month >= 0 && month <= 5){
+                GYear--;
+            }
+        }
+        return GYear;
     }
+
+    private String getNaksatraName(int naksatra){
+        String naksatra_name = "";
+        switch (naksatra){
+            case 0:
+                naksatra_name = "Asvini";
+                break;
+            case 1:
+                naksatra_name = "Bharani";
+                break;
+            case 2:
+                naksatra_name = "Krittika";
+                break;
+            case 3:
+                naksatra_name = "Rohini";
+                break;
+            case 4:
+                naksatra_name = "Mrigashirsha";
+                break;
+            case 5:
+                naksatra_name = "Ardra";
+                break;
+            case 6:
+                naksatra_name = "Punarvasu";
+                break;
+            case 7:
+                naksatra_name = "Pushya";
+                break;
+            case 8:
+                naksatra_name = "Ashlesha";
+                break;
+            case 9:
+                naksatra_name = "Magha";
+                break;
+            case 10:
+                naksatra_name = "Purva Phalguni";
+                break;
+            case 11:
+                naksatra_name = "Uttara Phalguni";
+                break;
+            case 12:
+                naksatra_name = "Hasta";
+                break;
+            case 13:
+                naksatra_name = "Chitra";
+                break;
+            case 14:
+                naksatra_name = "Swati";
+                break;
+            case 15:
+                naksatra_name = "Vishakha";
+                break;
+            case 16:
+                naksatra_name = "Anuradha";
+                break;
+            case 17:
+                naksatra_name = "Jyeshta";
+                break;
+            case 18:
+                naksatra_name = "Mula";
+                break;
+            case 19:
+                naksatra_name = "Purva Ashada";
+                break;
+            case 20:
+                naksatra_name = "Uttara Ashada";
+                break;
+            case 21:
+                naksatra_name = "Shravana";
+                break;
+            case 22:
+                naksatra_name = "Dhanishta";
+                break;
+            case 23:
+                naksatra_name = "Shatabhisha";
+                break;
+            case 24:
+                naksatra_name = "Purva Bhadrapada";
+                break;
+            case 25:
+                naksatra_name = "Uttara Bhadrapada";
+                break;
+            case 26:
+                naksatra_name = "Revati";
+                break;
+        }
+        return naksatra_name;
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -233,79 +304,166 @@ public class MainActivity extends Activity {
         // as you specify a parent activity in AndroidManifest.xml.
 
         int id = item.getItemId();
-
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            //startActivity(new Intent(this, SettingsActivity.class));
+
+
+          //  getSupportFragmentManager().beginTransaction()
+          //          .replace(R.id.weather_detail_container, new DetailFragment(), DETAILFRAGMENT_TAG)
+          //          .commit();
+           getFragmentManager().beginTransaction().replace(android.R.id.content, new SettingsActivity(this)).commit();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    public void showDatePickerDialog(View v) {
-        DialogFragment newFragment = new DatePickerFragment(positionView);
-        newFragment.show(getFragmentManager(), "datePicker");
-    }
+  /*  public static class MainSettingsFragment extends PreferenceFragment
+                                            implements SharedPreferences.OnSharedPreferenceChangeListener,
+                                            GoogleApiClient.ConnectionCallbacks,
+                                            GoogleApiClient.OnConnectionFailedListener,
+            com.google.android.gms.location.LocationListener{
 
+       // protected Context context;
+        SharedPreferences sharedpreferences;
+        SharedPreferences.Editor editor;
+        private Location mLastLocation;
+        LocationRequest mLocationRequest;
 
-    public static class DatePickerFragment extends DialogFragment
-            implements DatePickerDialog.OnDateSetListener {
+        // Google client to interact with Google API
+        private GoogleApiClient mGoogleApiClient;
+        String KEY_PREF_LOCATION_SWITCH = "pref_getlocation";
+        String KEY_PREF_PRESENT_LOCATION = "pref_location";
 
-        TextView mTextView;
-
-        public DatePickerFragment() {
+        public MainSettingsFragment(){
             //
         }
 
-        public DatePickerFragment(TextView textview) {
-            mTextView = textview;
+        public MainSettingsFragment(Context context){
+            this.context = context.getApplicationContext();
         }
 
         @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            // Use the current date as the default date in the picker
-            final Calendar c = Calendar.getInstance();
-            int year = c.get(Calendar.YEAR);
-            int month = c.get(Calendar.MONTH);
-            int day = c.get(Calendar.DAY_OF_MONTH);
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.preferences);
+            sharedpreferences = getActivity().getSharedPreferences("preferences", MODE_PRIVATE);
+            //PreferenceManager.setDefaultValues();
 
-            // Create a new instance of DatePickerDialog and return it
-            return new DatePickerDialog(getActivity(), this, year, month, day);
+            editor = sharedpreferences.edit();
+
+            if (mGoogleApiClient == null) {
+                mGoogleApiClient = new GoogleApiClient.Builder(context)
+                        .addConnectionCallbacks(this)
+                        .addOnConnectionFailedListener(this)
+                        .addApi(LocationServices.API)
+                        .build();
+            }
         }
 
-        public void onDateSet(DatePicker view, int year, int month, int day) {
-            // Do something with the date chosen by the user
-            MainActivity inst = new MainActivity();
-            double sun_longitude = inst.getSunLongitude(year, month + 1, day);
-            double moon_longitude = inst.getMoonLongitude(year, month + 1, day);
-            int tithi = inst.getTithi(sun_longitude, moon_longitude);
+        @Override
+        public void onResume() {
+            super.onResume();
+            getView().setBackgroundColor(Color.WHITE);
+            getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+        }
 
-            int paksa = inst.getPaksa(tithi);
+        @Override
+        public void onStart(){
+            super.onStart();
+            Log.e("Connected?", String.valueOf(mGoogleApiClient.isConnected()));
+            mGoogleApiClient.connect();
+            Log.e("Connected?", String.valueOf(mGoogleApiClient.isConnected()));
+        }
 
-            double ayanamsa = inst.getAyanamsa(year, month + 1, day);
+        @Override
+        public void onPause() {
+            super.onPause();
+            getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+        }
 
-            int naksatra = (int) Math.floor(inst.put_in_360(moon_longitude - ayanamsa) * (3 / 40.0));
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+            getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+        }
 
-            int rasi = inst.getRasi(sun_longitude, ayanamsa);
+        @Override
+        public void onStop(){
+            mGoogleApiClient.disconnect();
+            super.onStop();
+            Log.e("Connected?", String.valueOf(mGoogleApiClient.isConnected()));
+        }
 
-            double local_longitude = 78.48;
 
-            double local_latitude = 17.37;
 
-            double local_offset = 5.5;
+        @Override
+        public void onConnected(Bundle connectionHint) {
 
-            LatitudeLongitude ll2 = new LatitudeLongitude(local_latitude, local_longitude);
-            TimeZone timeZone = TimeZone.getTimeZone("GMT+5:30");
-            boolean dst = false;
-            Calendar cal = Calendar.getInstance();
-            cal.set(year, month, day);
-            Time sunrise = Sun.sunriseTime(cal, ll2, timeZone, dst);
-            String masa = inst.getMasa(year, month + 1, day, paksa);
-            mTextView.setMovementMethod(ScrollingMovementMethod.getInstance());
-            mTextView.setText("Tithi: " + tithi + "\nPaksa: " + paksa + " Masa: " + masa + "\nNaksatra:" + naksatra + "\nSun Rise:" + sunrise + "\nAyanamsa:" + ayanamsa
-                    + "\nSun Longitude: " + sun_longitude + "\nMoon Longitude:" + moon_longitude);
+            Log.d("MYTAG", "GOOGLE API CONNECTED!");
+            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
+                    mGoogleApiClient);
+            if (mLastLocation == null) {
+                mLocationRequest = new LocationRequest();
+                mLocationRequest.setInterval(10000);
+                mLocationRequest.setFastestInterval(5000);
+                mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+            }
+
+          //  mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            if (mLastLocation != null) {
+                editor.putString(KEY_PREF_PRESENT_LOCATION, mLastLocation.toString());
+                editor.commit();
+                //mLatitudeText.setText(String.valueOf(mLastLocation.getLatitude()));
+                //mLongitudeText.setText(String.valueOf(mLastLocation.getLongitude()));
+            }
+        }
+
+        @Override
+        public void onLocationChanged(Location location) {
+
+            mLastLocation = location;
+            if (mLastLocation != null) {
+                editor.putString(KEY_PREF_PRESENT_LOCATION, mLastLocation.toString());
+                editor.commit();
+
+            }
+        }
+
+        @Override
+        public void onConnectionFailed(ConnectionResult result) {
+          //  Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = "
+          //          + result.getErrorCode());
+        }
+
+        @Override
+        public void onConnectionSuspended(int arg0) {
+            mGoogleApiClient.connect();
+        }
+
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+                                              String key) {
+            if (key.equals(KEY_PREF_LOCATION_SWITCH)) {
+                if (sharedPreferences.getBoolean(key,false) == true) {
+                    Preference connectionPref = findPreference(KEY_PREF_PRESENT_LOCATION);
+                   mGoogleApiClient.connect();
+               //     mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
+               //             mGoogleApiClient);
+              //      if (mLastLocation != null) {
+              //          editor.putString(KEY_PREF_PRESENT_LOCATION, mLastLocation.toString());
+              //          editor.commit();
+                //    }
+                    connectionPref.setSummary(sharedPreferences.getString(KEY_PREF_PRESENT_LOCATION, "Not Available"));
+                    mGoogleApiClient.disconnect();
+                }
+                Preference pref_getlocation = findPreference(KEY_PREF_LOCATION_SWITCH);
+                pref_getlocation.setEnabled(sharedPreferences.getBoolean(key, false));
+            }
 
         }
-    }
+
+    }*/
 
     public String getMasa(int year, int month, int day, int cpaksa) {
 
@@ -326,11 +484,11 @@ public class MainActivity extends Activity {
                     year = cal.get(Calendar.YEAR);
                     month = cal.get(Calendar.MONTH);
                     day = cal.get(Calendar.DAY_OF_MONTH);
-                    double sun_longitude = getSunLongitude(year, month, day);
-                    double moon_longitude = getMoonLongitude(year, month, day);
+                    double sun_longitude = getSunLongitude(year, month+1, day);
+                    double moon_longitude = getMoonLongitude(year, month+1, day);
                     int tithi = getTithi(sun_longitude, moon_longitude);
                     int paksa = getPaksa(tithi);
-                    double ayanamsa = getAyanamsa(year, month, day);
+                    double ayanamsa = getAyanamsa(year, month+1, day);
 
                     if (paksa == 1) {
                         if (tithi == 16) {
@@ -359,11 +517,11 @@ public class MainActivity extends Activity {
                     year = cal.get(Calendar.YEAR);
                     month = cal.get(Calendar.MONTH);
                     day = cal.get(Calendar.DAY_OF_MONTH);
-                    double sun_longitude = getSunLongitude(year, month, day);
-                    double moon_longitude = getMoonLongitude(year, month, day);
+                    double sun_longitude = getSunLongitude(year, month+1, day);
+                    double moon_longitude = getMoonLongitude(year, month+1, day);
                     int tithi = getTithi(sun_longitude, moon_longitude);
                     int paksa = getPaksa(tithi);
-                    double ayanamsa = getAyanamsa(year, month, day);
+                    double ayanamsa = getAyanamsa(year, month+1, day);
 
                     if (paksa == 1) {
                         if (tithi == 15) {
@@ -532,24 +690,23 @@ public class MainActivity extends Activity {
 
     public int getRasi(double sun_longitude, double ayanamsa){
             return (int) Math.floor(put_in_360(sun_longitude - ayanamsa) / 30.0);
-        }
+    }
 
     public int getPaksa(int tithi) {
         return (int) Math.floor(tithi / 15);
-
     }
 
     public String getPaksaName(int paksa) {
 
-        String tithi_name;
+        String paksa_name;
 
         if (paksa == 0) {
-            tithi_name = "Krishna";
+            paksa_name = "Krishna";
         } else {
-            tithi_name = "Gaura";
+            paksa_name = "Gaura";
         }
 
-        return tithi_name;
+        return paksa_name;
     }
 
     public double getAyanamsa(int year, int month, int day){
@@ -613,7 +770,7 @@ public class MainActivity extends Activity {
             double x = a*(Math.cos(Math.toRadians(E1)) - e);
             double y = a* Math.sqrt(1 - e * e) * Math.sin(Math.toRadians(E1));
 
-            double r = Math.sqrt(x*x + y*y);
+            double r = Math.sqrt(x * x + y * y);
             double v = put_in_360(Math.toDegrees(Math.atan2(y, x)));
 
             double xeclip = r * ( Math.cos(Math.toRadians(N)) * Math.cos(Math.toRadians(v + w)) - Math.sin(Math.toRadians(N)) * Math.sin(Math.toRadians(v + w)) * Math.cos(Math.toRadians(i)) );
@@ -650,13 +807,13 @@ public class MainActivity extends Activity {
             double pert14 = -0.055 * Math.sin(Math.toRadians(Mm - F - 2*D));
             double pert15 = -0.046 * Math.sin(Math.toRadians(Mm + F - 2*D));
             double pert16 = +0.033 * Math.sin(Math.toRadians(F + 2 * D));
-            double pert17 = +0.017 * Math.sin(Math.toRadians(2*Mm + F));
+            double pert17 = +0.017 * Math.sin(Math.toRadians(2 * Mm + F));
 
             double pert18 = -0.58 * Math.cos(Math.toRadians(Mm - 2 * D));
             double pert19 = -0.46 * Math.cos(Math.toRadians(2 * D));
 
-            double moon_longitude = longitude + pert1 + pert2 + pert3 + pert4 + pert5 + pert6 + pert7 + pert8 + pert9 + pert10 + pert11 + pert12;
-            double moon_latitude = latitude + pert13 + pert14 + pert15 + pert16 + pert17;
+            double moon_longitude = put_in_360(longitude + pert1 + pert2 + pert3 + pert4 + pert5 + pert6 + pert7 + pert8 + pert9 + pert10 + pert11 + pert12);
+            //double moon_latitude = latitude + pert13 + pert14 + pert15 + pert16 + pert17;
 
             return moon_longitude;
 
@@ -669,7 +826,6 @@ public class MainActivity extends Activity {
 
             return result;
         }
-
 
 
 }

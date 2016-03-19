@@ -4,7 +4,7 @@
               android:id="@+id/all_events"
               android:layout_width="fill_parent"
               android:layout_height="fill_parent"
-              android:orientation="vertical" >
+              android:orientation="vertical">
 
     <TextView
             android:id="@+id/date"
@@ -14,19 +14,17 @@
             android:padding="10dp"
             android:layout_centerVertical="true"
             android:textColor="#FFFFFF"
-            android:textSize="15dp"
-            android:background="#0099CC"/>
+            android:textSize="15dp"/>
 
     <TextView
           android:id="@+id/event"
-          android:layout_width="match_parent"
+          android:layout_width="fill_parent"
           android:layout_height="wrap_content"
           android:paddingBottom="10dp"
           android:paddingLeft="10dp"
           android:textSize="16sp"
           android:textStyle="bold"
           android:textColor="#FFFFFF"
-          android:layout_centerVertical="true"
-          android:background="#0099CC"/>
+          android:layout_centerVertical="true"/>
 
     </LinearLayout>

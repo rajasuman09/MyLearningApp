@@ -9,4 +9,8 @@
             android:orderInCategory="100"
             android:showAsAction="never" />
 
+    <item    android:id="@+id/spinner1"
+             android:title="years"
+             android:showAsAction="ifRoom"
+             android:actionViewClass="android.widget.Spinner" />
 </menu>

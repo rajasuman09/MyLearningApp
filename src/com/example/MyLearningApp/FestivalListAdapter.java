@@ -2,6 +2,9 @@ package com.example.MyLearningApp;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.os.Handler;
+import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +12,8 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by Raja.Chirala on 28/02/2016.
@@ -17,13 +22,14 @@ public class FestivalListAdapter extends BaseAdapter
 {
     private static ArrayList<FestivalDetails> searchArrayList;
     private LayoutInflater mInflater;
-    private Context mContext;
-    Cursor cursor;
+    private ArrayList<FestivalDetails> array_list;
 
     public FestivalListAdapter(Context context,ArrayList<FestivalDetails> results)
     {
         searchArrayList = results;
         mInflater = LayoutInflater.from(context);
+        this.array_list = new ArrayList<FestivalDetails>();
+        this.array_list.addAll(searchArrayList);
 
     }
 
@@ -69,4 +75,34 @@ public class FestivalListAdapter extends BaseAdapter
         // TODO Auto-generated method stub
         return position;
     }
-}
+
+    public void filter(String charText) {
+        charText = charText.toLowerCase(Locale.getDefault());
+        searchArrayList.clear();
+        if (charText.length() == 0) {
+            searchArrayList.addAll(array_list);
+        }
+        else
+        {
+            for (FestivalDetails wp : array_list)
+            {
+                if (wp.getEventName().toLowerCase(Locale.getDefault()).contains(charText))
+                {
+                    searchArrayList.add(wp);
+                }
+            }
+        }
+        notifyDataSetChanged();
+    }
+
+    public void filter(int year) {
+
+        searchArrayList.clear();
+        searchArrayList.addAll(array_list);
+       // notifyDataSetChanged();
+
+    }
+
+
+
+    }
