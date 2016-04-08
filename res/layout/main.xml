@@ -6,7 +6,7 @@
                 android:paddingLeft="@dimen/activity_horizontal_margin"
                 android:paddingRight="@dimen/activity_horizontal_margin"
                 android:id="@+id/main_root"
-                android:background="@color/blue"
+                android:background="@color/home_page_color"
                 tools:context=".MainActivity">
 
     <ImageView
@@ -14,17 +14,18 @@
             android:layout_height="wrap_content"
             android:id="@+id/imageView"
             android:src="@drawable/gauranitai"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
+            android:paddingLeft="0dp"
+            android:paddingRight="0dp"
             android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true" />
+            android:layout_centerHorizontal="true"
+            android:contentDescription="Jai Nitai Gauranga"/>
 
       <LinearLayout
             android:id="@+id/today_details"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_below="@+id/imageView"
-            android:paddingTop="@dimen/activity_vertical_margin"
+            android:paddingTop="0dp"
             android:orientation="vertical">
 
           <TextView
@@ -35,7 +36,7 @@
                   android:layout_alignParentTop="true"
                   android:text="Today"
                   android:layout_centerHorizontal="true"
-                  android:textColor="#ff87ff09"
+                  android:textColor="@color/main_headings_color"
                   android:textSize="25dp" />
 
           <TextView
@@ -45,14 +46,14 @@
                   android:text="Gaurabda"
                   android:gravity="center"
                   android:textStyle="bold"
-                  android:background="#588539"
-                  android:textColor="#ff87ff09"/>
+                  android:background="@color/today_events_color"
+                  android:textColor="@color/white"/>
 
            <LinearLayout
                    android:layout_width="fill_parent"
                    android:layout_height="wrap_content"
                    android:gravity="center"
-                   android:background="#588539"
+                   android:background="@color/today_events_color"
                    android:orientation="horizontal">
 
                <TextView
@@ -62,7 +63,7 @@
                        android:text="Tithi"
                        android:layout_marginRight="20dp"
                        android:textStyle="bold"
-                       android:textColor="#ff87ff09"
+                       android:textColor="@color/white"
                 />
 
                <TextView
@@ -72,7 +73,7 @@
                        android:text="Paksa"
                        android:textStyle="bold"
                        android:layout_marginRight="20dp"
-                       android:textColor="#ff87ff09"
+                       android:textColor="@color/white"
                 />
 
                <TextView
@@ -81,7 +82,7 @@
                   android:layout_height="wrap_content"
                   android:text="Masa"
                   android:textStyle="bold"
-                  android:textColor="#ff87ff09"
+                  android:textColor="@color/white"
                   />
            </LinearLayout>
 
@@ -89,7 +90,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:background="#588539"
+            android:background="@color/today_events_color"
             android:orientation="horizontal">
 
               <TextView
@@ -99,7 +100,7 @@
                   android:text="Sunrise"
                   android:layout_marginRight="20dp"
                   android:textStyle="bold"
-                  android:textColor="#ff87ff09"/>
+                  android:textColor="@color/white"/>
 
               <TextView
                 android:id="@+id/naksatra"
@@ -107,7 +108,7 @@
                 android:layout_height="wrap_content"
                 android:text="Naksatra"
                 android:textStyle="bold"
-                android:textColor="#ff87ff09"/>
+                android:textColor="@color/white"/>
 
           </LinearLayout>
 
@@ -115,7 +116,7 @@
                   android:layout_width="fill_parent"
                   android:layout_height="wrap_content"
                   android:gravity="center"
-                  android:background="#588539"
+                  android:background="@color/today_events_color"
                   android:paddingBottom="10sp"
                   android:orientation="horizontal">
 
@@ -125,7 +126,7 @@
                       android:layout_height="wrap_content"
                       android:text="bmstart"
                       android:textStyle="bold"
-                      android:textColor="#ff87ff09"/>
+                      android:textColor="@color/white"/>
 
               <TextView
                       android:id="@+id/brahma_muhurta_end"
@@ -133,11 +134,41 @@
                       android:layout_height="wrap_content"
                       android:text="bmend"
                       android:textStyle="bold"
-                      android:textColor="#ff87ff09"/>
+                      android:textColor="@color/white"/>
 
           </LinearLayout>
 
       </LinearLayout>
+
+    <LinearLayout
+            android:id="@+id/buttonLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/today_details"
+            android:paddingTop="5dp"
+            android:orientation="horizontal" >
+
+        <Button
+                android:id="@+id/ViewAllEvents"
+                android:layout_width="0dp"
+                android:layout_height="20dp"
+                android:layout_weight="1"
+                android:textColor="@color/main_headings_color"
+                android:textSize="15dp"
+                android:background="@drawable/custom_button"
+                android:text="View All Events" />
+
+        <Button
+                android:id="@+id/CheckDate"
+                android:layout_width="0dp"
+                android:layout_height="20dp"
+                android:layout_weight="1"
+                android:textColor="@color/main_headings_color"
+                android:textSize="15dp"
+                android:background="@drawable/custom_button"
+                android:text="Check a Date" />
+    </LinearLayout>
+
 
     <TextView
             android:id="@+id/textView1"
@@ -146,34 +177,10 @@
             android:gravity="center"
             android:text="Events Today"
             android:layout_centerHorizontal="true"
-            android:textColor="#ff87ff09"
+            android:textColor="@color/main_headings_color"
             android:paddingTop="10dp"
-            android:layout_below="@+id/today_details"
+            android:layout_below="@+id/buttonLayout"
             android:textSize="25dp" />
-
-    <TextView
-            android:id="@+id/viewallevents"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="View All Events"
-            android:gravity="center"
-            android:textColor="#ff87ff09"
-            android:textSize="15dp"
-            android:clickable="true"
-            android:layout_below="@+id/textView1"
-            android:layout_centerHorizontal="true" />
-
-    <TextView
-            android:id="@+id/datecheck"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Check a Date"
-            android:gravity="center"
-            android:textColor="#ff87ff09"
-            android:textSize="15dp"
-            android:clickable="true"
-            android:layout_below="@+id/viewallevents"
-            android:layout_centerHorizontal="true" />
 
     <TextView
             android:id="@+id/textView3"
@@ -181,11 +188,11 @@
             android:layout_height="wrap_content"
             android:text="Date"
             android:gravity="center"
-            android:textColor="#ff87ff09"
+            android:textColor="@color/main_headings_color"
             android:textSize="20dp"
-            android:paddingTop="10dp"
+            android:paddingTop="5dp"
             android:paddingBottom="10dp"
-            android:layout_below="@+id/datecheck"
+            android:layout_below="@+id/textView1"
             android:layout_centerHorizontal="true" />
 
     <ListView

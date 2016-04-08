@@ -70,8 +70,8 @@ public class MainActivity extends Activity {
         int i = 0, gaurabda;
         String paksa_name, tithi_name, masa_name, naksatra_name;
 
-        double local_longitude = 78.48;
-        double local_latitude = 17.37;
+        double local_longitude = myDbHelper.getLocationLongitude(); //  78.48;
+        double local_latitude = myDbHelper.getLocationLatitude(); // 17.37;
         double local_offset = 5.5;
 
         LatitudeLongitude ll2 = new LatitudeLongitude(local_latitude, local_longitude);
@@ -108,12 +108,12 @@ public class MainActivity extends Activity {
         naksatra_name = getNaksatraName(naksatra);
         gaurabda = getGaurabdaYear(year, masa_name, month);
 
-        TextView event_heading, event_date, all_festivals, tv_tithi, tv_paksa, tv_masa, tv_sunrise, tv_naksatra, tv_gaurabda, tv_bm_start, tv_bm_end;
+        TextView event_heading, event_date, tv_tithi, tv_paksa, tv_masa, tv_sunrise, tv_naksatra, tv_gaurabda, tv_bm_start, tv_bm_end;
 
         event_heading = (TextView)findViewById(R.id.textView1);
         event_date = (TextView)findViewById(R.id.textView3);
-        all_festivals = (TextView)findViewById(R.id.viewallevents);
-        TextView date_check = (TextView)findViewById(R.id.datecheck);
+        Button view_all_festivals = (Button)findViewById(R.id.ViewAllEvents);
+        Button date_check = (Button)findViewById(R.id.CheckDate);
         tv_tithi = (TextView)findViewById(R.id.tithi);
         tv_paksa = (TextView)findViewById(R.id.paksa);
         tv_masa = (TextView)findViewById(R.id.masa);
@@ -166,8 +166,8 @@ public class MainActivity extends Activity {
         ListView listView = (ListView) findViewById(R.id.today_or_upcoming_events_list);
         listView.setAdapter(adapter);
 
-        //Set listener on TextView in main activity
-        all_festivals.setOnClickListener(new View.OnClickListener() {
+        //Set listener on button in main activity
+        view_all_festivals.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
@@ -176,7 +176,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        //Set listener on TextView in main activity
+        //Set listener on button in main activity
         date_check.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -185,8 +185,6 @@ public class MainActivity extends Activity {
                 startActivity(i);
             }
         });
-
-
 
     }
 
@@ -312,7 +310,10 @@ public class MainActivity extends Activity {
           //  getSupportFragmentManager().beginTransaction()
           //          .replace(R.id.weather_detail_container, new DetailFragment(), DETAILFRAGMENT_TAG)
           //          .commit();
-           getFragmentManager().beginTransaction().replace(android.R.id.content, new SettingsActivity(this)).commit();
+           getFragmentManager().beginTransaction()
+                   .replace(android.R.id.content, new SettingsActivity(this))
+                   .addToBackStack(null)
+                   .commit();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -826,7 +827,6 @@ public class MainActivity extends Activity {
 
             return result;
         }
-
 
 }
 

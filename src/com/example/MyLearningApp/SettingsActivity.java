@@ -56,8 +56,8 @@ public class SettingsActivity extends PreferenceFragment
                         .build();
             }
 
-
         }
+
 
         /**
          * Attaches a listener so the summary is always updated with the preference value.
@@ -67,10 +67,13 @@ public class SettingsActivity extends PreferenceFragment
         private void bindPreferenceSummaryToValue(Preference preference) {
             // Set the listener to watch for value changes.
             preference.setOnPreferenceChangeListener(this);
-            SharedPreferences sharedPref = getActivity().getSharedPreferences("preferences", Context.MODE_PRIVATE);
-            String location = sharedPref.getString("pref_location", "Mayapura");
-            if(preference.getKey()== "pref_location") {
-                preference.setSummary(location);
+         /*   SharedPreferences sharedPref = getActivity().getSharedPreferences("preferences", Context.MODE_PRIVATE);
+            String location = sharedPref.getString("pref_location", "Hyderabad"); */
+
+            DBHelper loc = new DBHelper(context);
+
+            if(preference.getKey().equals("pref_location")) {
+                preference.setSummary(loc.get_location());
             }
         }
 
@@ -142,10 +145,14 @@ public class SettingsActivity extends PreferenceFragment
            // SharedPreferences prefs =  getActivity().getSharedPreferences("preferences.xml", Context.MODE_PRIVATE);
             Preference p = findPreference("pref_location");
             p.setSummary(mLastLocation.toString());
-            SharedPreferences prefs = getActivity().getSharedPreferences("preferences", Context.MODE_PRIVATE);
+
+          /*  SharedPreferences prefs = getActivity().getSharedPreferences("preferences", Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = prefs.edit();
             editor.putString("pref_location", mLastLocation.toString());
-            editor.commit();
+            editor.commit(); */
+
+            DBHelper loc = new DBHelper(context);
+            loc.set_location(mLastLocation.toString(), mLastLocation.getLatitude(), mLastLocation.getLongitude());
 
         }
             //mLatitudeText.setText(String.valueOf(mLastLocation.getLatitude()));
@@ -158,10 +165,13 @@ public class SettingsActivity extends PreferenceFragment
         mLastLocation = location;
         if (mLastLocation != null) {
             //SharedPreferences prefs =  getActivity().getSharedPreferences("preferences", Context.MODE_PRIVATE);
-            SharedPreferences prefs = getActivity().getSharedPreferences("preferences", Context.MODE_PRIVATE);
+          /*  SharedPreferences prefs = getActivity().getSharedPreferences("preferences", Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = prefs.edit();
             editor.putString("pref_location", mLastLocation.toString());
             editor.commit();
+            */
+            DBHelper loc = new DBHelper(context);
+            loc.set_location(mLastLocation.toString(), mLastLocation.getLatitude(), mLastLocation.getLongitude());
             Preference p = findPreference("pref_location");
             p.setSummary(mLastLocation.toString());
 

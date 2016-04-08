@@ -4,8 +4,17 @@ package com.example.MyLearningApp;
  * Created by Raja.Chirala on 28/02/2016.
  */
 public class FestivalDetails {
+    private String serial_num;
     private String event_date = "";
     private String event_name = "";
+
+    public void setSerialNum(String serial_num) {
+        this.serial_num = serial_num;
+    }
+
+    public String getSerialNum() {
+        return serial_num;
+    }
 
     public void setEventDate(String event_date) {
         this.event_date = event_date;

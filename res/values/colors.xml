@@ -5,4 +5,9 @@
     <color name="lightblue">#ff36b5ff</color>
     <color name="orange">#ffe8c31b</color>
     <color name="grey">#666666</color>
+    <color name="white">#ffffff</color>
+    <color name="main_headings_color">#3D4347</color>
+    <color name="home_page_color">#fff1eb</color>
+    <color name="today_events_color">#9c9f84</color>
+    <color name="event_title">#998100</color>
 </resources>

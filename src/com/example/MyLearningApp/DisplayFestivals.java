@@ -5,6 +5,8 @@ package com.example.MyLearningApp;
  */
 
 import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.*;
 import android.app.Activity;
@@ -18,6 +20,9 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.*;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.*;
 
 public class DisplayFestivals extends Activity {
@@ -41,6 +46,7 @@ public class DisplayFestivals extends Activity {
 
         List<Integer> years = Arrays.asList(getYearList());
         dataAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, years);
+        listView = (ListView) findViewById(R.id.festivals_list);
 
         // Check if the dates present in the calendar db are for present year or not. If not, calculate for present year
         mydb = new DBHelper(this);
@@ -56,11 +62,12 @@ public class DisplayFestivals extends Activity {
 
                         mHandler.post(new Runnable() {
                             public void run() {
-                                listView = (ListView) findViewById(R.id.festivals_list);
+                                //listView = (ListView) findViewById(R.id.festivals_list);
                                 ArrayList<FestivalDetails> festival_list = mydb.getAllFestivals();
                                 adapter = new FestivalListAdapter(getApplicationContext(), festival_list);
                                 listView.setAdapter(adapter);
                                 mProgress.setVisibility(LinearLayout.GONE);
+
                             }
 
                         });
@@ -76,11 +83,48 @@ public class DisplayFestivals extends Activity {
             t.start();
         }
         else{
-            listView = (ListView) findViewById(R.id.festivals_list);
+            //listView = (ListView) findViewById(R.id.festivals_list);
             ArrayList<FestivalDetails> festival_list = mydb.getAllFestivals();
             adapter = new FestivalListAdapter(getApplicationContext(), festival_list);
             listView.setAdapter(adapter);
+          //  listView.smoothScrollToPosition(mydb.get_festival_position());
         }
+
+       // listView.setSmoothScrollbarEnabled(true);
+       // listView.smoothScrollToPosition(mydb.get_festival_position());
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                LinearLayout ll = (LinearLayout) view;
+                TextView tv = (TextView) ll.findViewById(R.id.event);
+                TextView snum = (TextView) ll.findViewById(R.id.serial_no);
+
+                // selected item
+                String event_name = tv.getText().toString();
+                String serial_num = snum.getText().toString();
+
+                String file_name = serial_num + ".txt";
+                String event_desc = "";
+                try {
+                    event_desc = readFromAssets(getApplicationContext(), file_name);
+                }
+                catch(IOException e) {
+                    e.printStackTrace();
+                }
+
+                // Launching new Activity on selecting single List Item
+                Intent i = new Intent(getApplicationContext(), FestivalDescription.class);
+                Bundle extras = new Bundle();
+                extras.putString("EXTRA_EVENTNAME", event_name);
+                extras.putString("EXTRA_EVENTDESC", event_desc);
+                i.putExtras(extras);
+                startActivity(i);
+            }
+        });
+
 
 
         // Locate the EditText in listview_main.xml
@@ -150,6 +194,7 @@ public class DisplayFestivals extends Activity {
                                     final ArrayList<FestivalDetails> festival_list = mydb.getAllFestivals();
                                     adapter = new FestivalListAdapter(getApplicationContext(), festival_list);
                                     listView.setAdapter(adapter);
+                                    listView.smoothScrollToPosition(mydb.get_festival_position());
                                     mProgress.setVisibility(LinearLayout.GONE);
 
                                 }
@@ -195,4 +240,17 @@ public class DisplayFestivals extends Activity {
         return years;
     }
 
+    public static String readFromAssets(Context context, String filename) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(context.getAssets().open(filename)));
+
+        // do reading, usually loop until end of file reading
+        StringBuilder sb = new StringBuilder();
+        String mLine = reader.readLine();
+        while (mLine != null) {
+            sb.append(mLine); // process line
+            mLine = reader.readLine();
+        }
+        reader.close();
+        return sb.toString();
+    }
 }

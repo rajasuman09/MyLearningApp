@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
+import android.content.Context;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
 import android.view.View;
@@ -22,12 +23,14 @@ import java.util.TimeZone;
 public class DateCheck extends Activity{
 
     TextView tv_date_picker;
+    static DBHelper mydb;
 
     protected void onCreate(Bundle savedInstanceState){
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.date_check);
         tv_date_picker = (TextView) findViewById(R.id.textView3);
+        mydb = new DBHelper(this);
     }
 
     public void showDatePickerDialog(View v) {
@@ -39,6 +42,7 @@ public class DateCheck extends Activity{
             implements DatePickerDialog.OnDateSetListener {
 
         TextView mTextView;
+        protected Context context;
 
         public DatePickerFragment() {
             //
@@ -47,6 +51,10 @@ public class DateCheck extends Activity{
         public DatePickerFragment(TextView textview) {
             mTextView = textview;
         }
+
+    //    public DatePickerFragment (Context context){
+    //        this.context = context.getApplicationContext();
+     //   }
 
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -63,9 +71,11 @@ public class DateCheck extends Activity{
         public void onDateSet(DatePicker view, int year, int month, int day) {
             // Do something with the date chosen by the user
             MainActivity inst = new MainActivity();
+           // DBHelper myDatabaseHelper = new DBHelper(context);
             double sun_longitude = inst.getSunLongitude(year, month + 1, day);
             double moon_longitude = inst.getMoonLongitude(year, month + 1, day);
             int tithi = inst.getTithi(sun_longitude, moon_longitude);
+           // DBHelper myDatabaseHelper = new DBHelper(getContext());
 
             int paksa = inst.getPaksa(tithi);
 
@@ -75,9 +85,12 @@ public class DateCheck extends Activity{
 
             int rasi = inst.getRasi(sun_longitude, ayanamsa);
 
-            double local_longitude = 78.48;
+           double local_longitude = mydb.getLocationLongitude(); // 78.48;
 
-            double local_latitude = 17.37;
+            //double local_longitude = 78.48;
+
+            double local_latitude = mydb.getLocationLatitude(); // 78.48;
+           // double local_latitude = 17.37;
 
             LatitudeLongitude ll2 = new LatitudeLongitude(local_latitude, local_longitude);
             Calendar cal = Calendar.getInstance();
@@ -95,7 +108,9 @@ public class DateCheck extends Activity{
             mTextView.setMovementMethod(ScrollingMovementMethod.getInstance());
             mTextView.setText("Tithi: " + tithi + "\nPaksa: " + paksa + " Masa: " + masa + "\nNaksatra:" + naksatra + "\nSun Rise:" + sunrise + "\nAyanamsa:" + ayanamsa
                     + "\nSun Longitude: " + sun_longitude + "\nMoon Longitude:" + moon_longitude + "\nTime Zone: " + timeZone + "\nDST Savings: " + dst_savings
-                    + "\nTimezone Name: " + timeZonename);
+                    + "\nTimezone Name: " + timeZonename
+                    + "\nGeographic Latitude: " + local_latitude
+                    + "\nGeographic Longitude: " + local_longitude);
 
         }
     }

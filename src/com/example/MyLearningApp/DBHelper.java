@@ -4,6 +4,7 @@ package com.example.MyLearningApp;
  * Created by Raja.Chirala on 09/02/2016.
  */
 import java.io.*;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -23,7 +24,7 @@ public class DBHelper extends SQLiteOpenHelper{
     private static String DB_NAME = "VCal.sqlite";
     private SQLiteDatabase myDataBase;
     private final Context myContext;
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 7;
 
     /**
      * Constructor
@@ -214,6 +215,7 @@ public class DBHelper extends SQLiteOpenHelper{
 
         while(res.isAfterLast() == false){
             fd = new FestivalDetails();
+            fd.setSerialNum(res.getString(res.getColumnIndex("_id")));
             fd.setEventDate(res.getString(res.getColumnIndex("calendar_date")));
             fd.setEventName(res.getString(res.getColumnIndex("event_name")));
             array_list.add(fd);
@@ -241,6 +243,35 @@ public class DBHelper extends SQLiteOpenHelper{
         return array_list;
     }
 
+    public int get_festival_position(){
+        myDataBase = this.getReadableDatabase();
+        Cursor res =  myDataBase.rawQuery( "select * from festivals where calendar_date is not null order by calendar_date ASC", null );
+        res.moveToFirst();
+        final Calendar c = Calendar.getInstance();
+        Date today = c.getTime();
+        int position = -1;
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        while(res.isAfterLast() == false && position < 0){
+
+            try {
+                Date festival_date = sdf.parse(res.getString(res.getColumnIndex("calendar_date")));
+                if (festival_date.compareTo(today) >= 0){
+                    position = res.getPosition();
+                }
+            }
+            catch (ParseException e){
+                e.printStackTrace();
+            }
+
+            res.moveToNext();
+        }
+        res.close();
+        myDataBase.close();
+        return position;
+    }
+
     public void calculate_festival_days(int year){
         Calendar event_tracker = Calendar.getInstance();
         event_tracker.set(year, 0, 1);
@@ -261,7 +292,21 @@ public class DBHelper extends SQLiteOpenHelper{
             Date date = event_tracker.getTime();
             SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
 
-            strSQL = "UPDATE festivals SET calendar_date = '" + dateFormatter.format(date) + "' WHERE tithi = '" + tithi_name + "' AND paksa = '" + paksa_name + "' AND masa = '" + masa_name + "'";
+                event_tracker.add(Calendar.DATE,-1);
+                int yesterday = event_tracker.get(Calendar.DAY_OF_MONTH);
+                int yesterday_year = event_tracker.get(Calendar.YEAR);
+                int yesterday_month = event_tracker.get(Calendar.MONTH);
+                double yesterday_sun_longitude = helper.getSunLongitude(yesterday_year, yesterday_month + 1, yesterday);
+                double yesterday_moon_longitude = helper.getMoonLongitude(yesterday_year, yesterday_month + 1, yesterday);
+                int yesterday_tithi = helper.getTithi(yesterday_sun_longitude, yesterday_moon_longitude);
+                if (yesterday_tithi < tithi - 1){
+                    String yesterday_tithi_name = helper.getTithiName(tithi-1);
+                    strSQL = "UPDATE festivals SET calendar_date = '" + dateFormatter.format(date) + "' WHERE tithi = '" + yesterday_tithi_name + "' AND paksa = '" + paksa_name + "' AND masa = '" + masa_name + "' AND calendar_date IS NULL" ;
+                    myDataBase.execSQL(strSQL);
+                }
+                event_tracker.add(Calendar.DATE,1);
+
+            strSQL = "UPDATE festivals SET calendar_date = '" + dateFormatter.format(date) + "' WHERE tithi = '" + tithi_name + "' AND paksa = '" + paksa_name + "' AND masa = '" + masa_name + "' AND calendar_date IS NULL";
 
             myDataBase.execSQL(strSQL);
             event_tracker.add(Calendar.DATE,1);
@@ -295,6 +340,76 @@ public class DBHelper extends SQLiteOpenHelper{
         myDataBase.close();
 
         return is_current_year;
+    }
+
+    public String get_location(){
+
+        myDataBase = this.getReadableDatabase();
+        //  Cursor res =  myDataBase.rawQuery("SELECT strftime('%Y', calendar_date) year,  calendar_date FROM festivals WHERE calendar_date IS NOT NULL LIMIT 1", null);
+        Cursor res =  myDataBase.rawQuery( "select value from app_variables where name = 'location'", null );
+        String location_name = "Mayapura";
+
+        res.moveToFirst();
+
+        if(res.isAfterLast() == false) {
+            location_name = res.getString(0);
+        }
+
+        res.close();
+        myDataBase.close();
+
+        return location_name;
+    }
+
+    public void set_location(String new_location, double latitude, double longitude){
+
+        myDataBase = this.getWritableDatabase();
+
+        String strSQL = "UPDATE app_variables SET value = '" + new_location + "' WHERE name = 'location'";
+        myDataBase.execSQL(strSQL);
+
+        strSQL = "UPDATE app_variables SET value = '" + latitude + "' WHERE name = 'latitude'";
+        myDataBase.execSQL(strSQL);
+
+        strSQL = "UPDATE app_variables SET value = '" + longitude + "' WHERE name = 'longitude'";
+        myDataBase.execSQL(strSQL);
+
+        myDataBase.close();
+
+    }
+
+    public double getLocationLongitude(){
+        myDataBase = this.getReadableDatabase();
+        Cursor res =  myDataBase.rawQuery( "select value from app_variables where name = 'longitude'", null );
+        double GeoLongitude = 0.0;
+
+        res.moveToFirst();
+
+        if(res.isAfterLast() == false) {
+            GeoLongitude = res.getDouble(0);
+        }
+
+        res.close();
+        myDataBase.close();
+
+        return GeoLongitude;
+    }
+
+    public double getLocationLatitude(){
+        myDataBase = this.getReadableDatabase();
+        Cursor res =  myDataBase.rawQuery( "select value from app_variables where name = 'latitude'", null );
+        double GeoLatitude = 0.0;
+
+        res.moveToFirst();
+
+        if(res.isAfterLast() == false) {
+            GeoLatitude = res.getDouble(0);
+        }
+
+        res.close();
+        myDataBase.close();
+
+        return GeoLatitude;
     }
 
 }

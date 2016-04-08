@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+    <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/event_image"
+            android:src="@drawable/gauranitai"
+            android:paddingLeft="2dp"
+            android:paddingRight="2dp"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:contentDescription="Jai Nitai Gauranga"/>
+
+    <TextView android:id="@+id/event_title"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:textSize="25dip"
+              android:textStyle="bold"
+              android:padding="5dip"
+              android:textAlignment="center"
+              android:textColor="@color/event_title"/>
+
+    <TextView android:id="@+id/event_desc"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:textSize="15dip"
+              android:textStyle="normal"
+              android:textColor="#000000"/>
+
+</LinearLayout>
