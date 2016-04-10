@@ -51,6 +51,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         if(array_list.size() > 0) {
             Notify("Haribol", "Alert! " + array_list.size() + " Events Tomorrow", context);
+            dbHelper.setNotificationFlag();
         }
     }
 

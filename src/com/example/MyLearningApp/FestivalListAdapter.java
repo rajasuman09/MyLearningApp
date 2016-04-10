@@ -46,7 +46,7 @@ public class FestivalListAdapter extends BaseAdapter
         if (convertView == null) {
             convertView = mInflater.inflate(R.layout.festival_each_item, null);
             holder = new ViewHolder();
-            holder.txtSerialNum = (TextView) convertView.findViewById(R.id.serial_no);
+            holder.txtFileName = (TextView) convertView.findViewById(R.id.file_name);
             holder.txtEventDate = (TextView) convertView.findViewById(R.id.date);
             holder.txtEventName = (TextView) convertView.findViewById(R.id.event);
             convertView.setTag(holder);
@@ -54,7 +54,7 @@ public class FestivalListAdapter extends BaseAdapter
             holder = (ViewHolder) convertView.getTag();
         }
 
-        holder.txtSerialNum.setText(searchArrayList.get(position).getSerialNum());
+        holder.txtFileName.setText(searchArrayList.get(position).getFileName());
         holder.txtEventDate.setText(searchArrayList.get(position).getEventDate());
         holder.txtEventName.setText(searchArrayList.get(position).getEventName());
 
@@ -62,7 +62,7 @@ public class FestivalListAdapter extends BaseAdapter
     }
 
     static class ViewHolder {
-        TextView txtSerialNum;
+        TextView txtFileName;
         TextView txtEventDate;
         TextView txtEventName;
     }

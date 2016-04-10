@@ -27,7 +27,7 @@ import java.util.*;
 
 public class DisplayFestivals extends Activity {
 
-    DBHelper mydb;
+    DBHelper mydb, mydb1;
     ListView listView;
     EditText editsearch;
     FestivalListAdapter adapter;
@@ -35,6 +35,7 @@ public class DisplayFestivals extends Activity {
     private boolean isSpinnerInitial = true;
     private LinearLayout mProgress;
     private Handler mHandler = new Handler();
+    int pos;
 
 
     @Override
@@ -50,6 +51,7 @@ public class DisplayFestivals extends Activity {
 
         // Check if the dates present in the calendar db are for present year or not. If not, calculate for present year
         mydb = new DBHelper(this);
+        mydb1 = new DBHelper(this);
         if (!mydb.is_current_year_data()){
             mProgress.setVisibility(LinearLayout.VISIBLE);
             final Thread t = new Thread() {
@@ -90,7 +92,8 @@ public class DisplayFestivals extends Activity {
           //  listView.smoothScrollToPosition(mydb.get_festival_position());
         }
 
-       // listView.setSmoothScrollbarEnabled(true);
+        timerDelayRunForScroll(0);
+       //listView.setSelectionFromTop(20,0);
        // listView.smoothScrollToPosition(mydb.get_festival_position());
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -100,16 +103,16 @@ public class DisplayFestivals extends Activity {
 
                 LinearLayout ll = (LinearLayout) view;
                 TextView tv = (TextView) ll.findViewById(R.id.event);
-                TextView snum = (TextView) ll.findViewById(R.id.serial_no);
+                TextView fname = (TextView) ll.findViewById(R.id.file_name);
 
                 // selected item
                 String event_name = tv.getText().toString();
-                String serial_num = snum.getText().toString();
+                String file_name = fname.getText().toString();
 
-                String file_name = serial_num + ".txt";
+                String content_file_name = file_name + ".txt";
                 String event_desc = "";
                 try {
-                    event_desc = readFromAssets(getApplicationContext(), file_name);
+                    event_desc = readFromAssets(getApplicationContext(), content_file_name);
                 }
                 catch(IOException e) {
                     e.printStackTrace();
@@ -120,6 +123,7 @@ public class DisplayFestivals extends Activity {
                 Bundle extras = new Bundle();
                 extras.putString("EXTRA_EVENTNAME", event_name);
                 extras.putString("EXTRA_EVENTDESC", event_desc);
+                extras.putString("EXTRA_FILENAME", file_name);
                 i.putExtras(extras);
                 startActivity(i);
             }
@@ -153,6 +157,19 @@ public class DisplayFestivals extends Activity {
             }
         });
 
+    }
+
+    public void timerDelayRunForScroll(long time) {
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                try {
+                    //listView.smoothScrollToPositionFromTop(mydb.get_festival_position(),1,5000);
+                    listView.setSelectionFromTop(mydb1.get_festival_position()-1,0);
+
+                } catch (Exception e) {}
+            }
+        }, time);
     }
 
     @Override

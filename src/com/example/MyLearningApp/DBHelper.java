@@ -24,7 +24,7 @@ public class DBHelper extends SQLiteOpenHelper{
     private static String DB_NAME = "VCal.sqlite";
     private SQLiteDatabase myDataBase;
     private final Context myContext;
-    private static final int DATABASE_VERSION = 7;
+    private static final int DATABASE_VERSION = 2;
 
     /**
      * Constructor
@@ -210,12 +210,18 @@ public class DBHelper extends SQLiteOpenHelper{
         ArrayList<FestivalDetails> array_list = new ArrayList<FestivalDetails>();
         FestivalDetails fd;
         myDataBase = this.getReadableDatabase();
-        Cursor res =  myDataBase.rawQuery( "select * from festivals where calendar_date is not null order by calendar_date ASC", null );
+        String selectQuery = "select * from (\n" +
+                "\tselect event_name, calendar_date, file_name from festivals where calendar_date is not null\n" +
+                "\tunion all\n" +
+                "\tselect event_name, alt_calendar_date as calendar_date, file_name from festivals where alt_calendar_date is not null\n" +
+                ")\n" +
+                "\torder by calendar_date ASC";
+        Cursor res =  myDataBase.rawQuery( selectQuery, null );
         res.moveToFirst();
 
         while(res.isAfterLast() == false){
             fd = new FestivalDetails();
-            fd.setSerialNum(res.getString(res.getColumnIndex("_id")));
+            fd.setFileName(res.getString(res.getColumnIndex("file_name")));
             fd.setEventDate(res.getString(res.getColumnIndex("calendar_date")));
             fd.setEventName(res.getString(res.getColumnIndex("event_name")));
             array_list.add(fd);
@@ -277,8 +283,9 @@ public class DBHelper extends SQLiteOpenHelper{
         event_tracker.set(year, 0, 1);
         MainActivity helper = new MainActivity();
         myDataBase = this.getWritableDatabase();
-        String strSQL = "UPDATE festivals SET calendar_date = NULL";
+        String strSQL = "UPDATE festivals SET calendar_date = null, alt_calendar_date = null";
         myDataBase.execSQL(strSQL);
+
         do{
             int month = event_tracker.get(Calendar.MONTH);
             int day = event_tracker.get(Calendar.DAY_OF_MONTH);
@@ -301,13 +308,16 @@ public class DBHelper extends SQLiteOpenHelper{
                 int yesterday_tithi = helper.getTithi(yesterday_sun_longitude, yesterday_moon_longitude);
                 if (yesterday_tithi < tithi - 1){
                     String yesterday_tithi_name = helper.getTithiName(tithi-1);
-                    strSQL = "UPDATE festivals SET calendar_date = '" + dateFormatter.format(date) + "' WHERE tithi = '" + yesterday_tithi_name + "' AND paksa = '" + paksa_name + "' AND masa = '" + masa_name + "' AND calendar_date IS NULL" ;
+                    strSQL = "UPDATE festivals SET alt_calendar_date = '" + dateFormatter.format(date) + "' WHERE tithi = '" + yesterday_tithi_name + "' AND paksa = '" + paksa_name + "' AND masa = '" + masa_name + "' AND calendar_date is not null" ;
+                    myDataBase.execSQL(strSQL);
+                    strSQL = "UPDATE festivals SET calendar_date = '" + dateFormatter.format(date) + "' WHERE tithi = '" + yesterday_tithi_name + "' AND paksa = '" + paksa_name + "' AND masa = '" + masa_name + "' AND calendar_date is null";
                     myDataBase.execSQL(strSQL);
                 }
                 event_tracker.add(Calendar.DATE,1);
 
-            strSQL = "UPDATE festivals SET calendar_date = '" + dateFormatter.format(date) + "' WHERE tithi = '" + tithi_name + "' AND paksa = '" + paksa_name + "' AND masa = '" + masa_name + "' AND calendar_date IS NULL";
-
+            strSQL = "UPDATE festivals SET alt_calendar_date = '" + dateFormatter.format(date) + "' WHERE tithi = '" + tithi_name + "' AND paksa = '" + paksa_name + "' AND masa = '" + masa_name + "' AND calendar_date is not null";
+            myDataBase.execSQL(strSQL);
+            strSQL = "UPDATE festivals SET calendar_date = '" + dateFormatter.format(date) + "' WHERE tithi = '" + tithi_name + "' AND paksa = '" + paksa_name + "' AND masa = '" + masa_name + "' AND calendar_date is null";
             myDataBase.execSQL(strSQL);
             event_tracker.add(Calendar.DATE,1);
         } while(event_tracker.get(Calendar.YEAR) == year);
@@ -410,6 +420,83 @@ public class DBHelper extends SQLiteOpenHelper{
         myDataBase.close();
 
         return GeoLatitude;
+    }
+
+    public boolean IsAlarmScheduled(){
+        myDataBase = this.getReadableDatabase();
+        Cursor res =  myDataBase.rawQuery( "select value from app_variables where name = 'is_alarm_scheduled'", null );
+        boolean is_alarm_scheduled = false;
+
+        res.moveToFirst();
+
+        if(res.isAfterLast() == false) {
+            is_alarm_scheduled = Boolean.parseBoolean(res.getString(0));
+        }
+
+        res.close();
+        myDataBase.close();
+        return is_alarm_scheduled;
+    }
+
+    public boolean IsNotificationFlagResetAlarmScheduled(){
+        myDataBase = this.getReadableDatabase();
+        Cursor res =  myDataBase.rawQuery( "select value from app_variables where name = 'is_notify_flag_reset_alarm_scheduled'", null );
+        boolean is_alarm_scheduled = false;
+
+        res.moveToFirst();
+
+        if(res.isAfterLast() == false) {
+            is_alarm_scheduled = Boolean.parseBoolean(res.getString(0));
+        }
+
+        res.close();
+        myDataBase.close();
+        return is_alarm_scheduled;
+    }
+
+    public void setAlarmScheduled(){
+
+        myDataBase = this.getWritableDatabase();
+
+        String strSQL = "UPDATE app_variables SET value = 'true' WHERE name = 'is_alarm_scheduled'";
+        myDataBase.execSQL(strSQL);
+
+        myDataBase.close();
+
+    }
+
+
+    public void setNotificationFlagResetAlarmScheduled(){
+
+        myDataBase = this.getWritableDatabase();
+
+        String strSQL = "UPDATE app_variables SET value = 'true' WHERE name = 'is_notify_flag_reset_alarm_scheduled'";
+        myDataBase.execSQL(strSQL);
+
+        myDataBase.close();
+
+    }
+
+    public void resetNotificationFlag(){
+
+        myDataBase = this.getWritableDatabase();
+
+        String strSQL = "UPDATE app_variables SET value = 'false' WHERE name = 'is_alarm_notified'";
+        myDataBase.execSQL(strSQL);
+
+        myDataBase.close();
+
+    }
+
+    public void setNotificationFlag(){
+
+        myDataBase = this.getWritableDatabase();
+
+        String strSQL = "UPDATE app_variables SET value = 'true' WHERE name = 'is_alarm_notified'";
+        myDataBase.execSQL(strSQL);
+
+        myDataBase.close();
+
     }
 
 }

@@ -49,8 +49,10 @@ public class MainActivity extends Activity {
         DBHelper myDbHelper;
         myDbHelper = new DBHelper(this);
         myDbHelper.initialize();
+        scheduleAlarm(myDbHelper, false);
+        scheduleNotificationFlagReset(myDbHelper, false);
 
-        AlarmReceiver ar = new AlarmReceiver(this);
+     /*   AlarmReceiver ar = new AlarmReceiver(this);
         Calendar alarm_time = Calendar.getInstance();
         alarm_time.setTimeInMillis(System.currentTimeMillis());
 
@@ -65,7 +67,7 @@ public class MainActivity extends Activity {
 
         //set the alarm for particular time
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,alarm_time.getTimeInMillis(),24*60*60*1000, PendingIntent.getBroadcast(this,1,  intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
-
+*/
         ArrayList array_list;
         int i = 0, gaurabda;
         String paksa_name, tithi_name, masa_name, naksatra_name;
@@ -186,6 +188,61 @@ public class MainActivity extends Activity {
             }
         });
 
+    }
+
+    public void scheduleAlarm(DBHelper myDbHelper, boolean onBoot){
+        AlarmReceiver ar = new AlarmReceiver(this);
+        Calendar alarm_time = Calendar.getInstance();
+        alarm_time.setTimeInMillis(System.currentTimeMillis());
+
+        alarm_time.set(Calendar.HOUR_OF_DAY, 20);
+        alarm_time.set(Calendar.MINUTE, 00);
+        alarm_time.set(Calendar.SECOND, 00);
+
+        Intent intentAlarm = new Intent(ar.mContext, AlarmReceiver.class);
+
+        // create the object
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+
+        //set the alarm for particular time
+        if(!onBoot) {
+            if (!myDbHelper.IsAlarmScheduled()) {
+                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, alarm_time.getTimeInMillis(), 24 * 60 * 60 * 1000, PendingIntent.getBroadcast(this, 1, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+                myDbHelper.setAlarmScheduled();
+            }
+        }
+        else{
+            alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, alarm_time.getTimeInMillis(), 24 * 60 * 60 * 1000, PendingIntent.getBroadcast(this, 1, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+            myDbHelper.setAlarmScheduled();
+        }
+    }
+
+    public void scheduleNotificationFlagReset(DBHelper myDbHelper, boolean onBoot){
+        AlarmReceiver ar = new AlarmReceiver(this);
+        Calendar alarm_time = Calendar.getInstance();
+        alarm_time.setTimeInMillis(System.currentTimeMillis());
+
+        alarm_time.set(Calendar.HOUR_OF_DAY, 00);
+        alarm_time.set(Calendar.MINUTE, 00);
+        alarm_time.set(Calendar.SECOND, 01);
+
+        Intent intentAlarm = new Intent(ar.mContext, NotificationFlagReset.class);
+
+        // create the object
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+        //set the alarm for particular time
+        if(!onBoot) {
+            if (!myDbHelper.IsNotificationFlagResetAlarmScheduled()) {
+                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, alarm_time.getTimeInMillis(), 24 * 60 * 60 * 1000, PendingIntent.getBroadcast(this, 1, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+                myDbHelper.setNotificationFlagResetAlarmScheduled();
+            }
+        }
+        else{
+            alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, alarm_time.getTimeInMillis(), 24 * 60 * 60 * 1000, PendingIntent.getBroadcast(this, 1, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT));
+            myDbHelper.setNotificationFlagResetAlarmScheduled();
+        }
     }
 
     private int getGaurabdaYear(int year, String masa_name, int month){
